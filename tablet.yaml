@@ -1,0 +1,941 @@
+kiosk_mode:
+  non_admin_settings:
+    kiosk: true
+    ignore_entity_settings: true
+  entity_settings:
+    - entity:
+        input_boolean.kiosk_mode: 'on'
+      hide_header: true
+    - entity:
+        input_boolean.kiosk_mode: 'off'
+      hide_header: false
+views:
+  - title: HOME
+    type: custom:grid-layout
+    layout:
+      grid-template-columns: 25% 22.5% 22.5% 22.5%
+      grid-column-gap: 18pt
+      grid-template-rows: 80px 1fr 80px
+      grid-template-areas: |
+        "topbar topbar topbar topbar"
+        ". calendar calendar  ."
+        "bottombar bottombar bottombar bottombar"
+    cards:
+      - type: horizontal-stack
+        cards:
+          - type: custom:mushroom-template-card
+            primary: Lighting
+            secondary: '{{ states(''sensor.lights_on_counter'') }} Lights Are On'
+            icon: mdi:lightbulb-group-outline
+            icon_color: |-
+              {% if states('sensor.lights_on_counter') == '0' %}
+                white
+              {% else %}
+                amber
+              {% endif %}
+            layout: horizontal
+            tap_action:
+              action: perform-action
+              perform_action: light.toggle
+              target:
+                entity_id: light.all_lights
+              data:
+                color_temp_kelvin: 6500
+                brightness_pct: 100
+            hold_action:
+              action: none
+            double_tap_action:
+              action: more-info
+            card_mod:
+              style: |
+                ha-card {
+                  background: rgba(255, 255, 255, 0.05);
+                  backdrop-filter: blur(4px);
+                  -webkit-backdrop-filter: blur(4px);
+                  border-radius: 10px;
+                  border: none;
+                }
+          - type: custom:mushroom-template-card
+            primary: Shopping
+            secondary: |-
+              {% if states('todo.shopping_list') | int == 1 %}
+                1 item needed
+              {% else %}
+                {{ states('todo.shopping_list') | int }} Items Needed
+              {% endif %}
+            icon: mdi:cart-variant
+            icon_color: |-
+              {% if states('todo.shopping_list') | int > 0 %}
+                  #FFB200
+                {% else %}
+                  white
+                {% endif %}
+            layout: horizontal
+            tap_action:
+              action: navigate
+              navigation_path: '#shopping'
+            hold_action:
+              action: none
+            double_tap_action:
+              action: none
+            card_mod:
+              style: |
+                ha-card {
+                  background: rgba(255, 255, 255, 0.05);
+                  backdrop-filter: blur(4px);
+                  -webkit-backdrop-filter: blur(4px);
+                  border-radius: 10px;
+                  border: none;
+                }
+          - type: custom:mushroom-template-card
+            primary: Temperature
+            secondary: '{{ states(''sensor.livingroom_temperature_temperature'') }}°F"'
+            icon: mdi:home-thermometer-outline
+            icon_color: >
+              {% if states('sensor.livingroom_temperature_temperature') | int <
+              65 %}
+                #FFF0BD
+              {% elif states('sensor.livingroom_temperature_temperature') | int
+              >= 65 and states('sensor.livingroom_temperature_temperature') |
+              int <= 78 %}
+                #4DA1A9
+              {% else %}
+                #E50046
+              {% endif %}
+            layout: horizontal
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            double_tap_action:
+              action: none
+            card_mod:
+              style: |
+                ha-card {
+                  background: rgba(255, 255, 255, 0.05);
+                  backdrop-filter: blur(4px);
+                  -webkit-backdrop-filter: blur(4px);
+                  border-radius: 10px;
+                  border: none;
+                }
+          - type: custom:mushroom-template-card
+            primary: Anniversary
+            secondary: '{{ states(''sensor.wedding_anniversary'') }} Days'
+            icon: mdi:ring
+            icon_color: red
+            layout: horizontal
+            tap_action:
+              action: navigate
+              navigation_path: ''
+            hold_action:
+              action: none
+            double_tap_action:
+              action: none
+            badge_icon: |-
+              {% if states('sensor.wedding_anniversary') >= 20 %}
+                mdi:clock
+              {% else %}
+                null
+              {% endif %}
+            badge_color: |-
+              {% if states('sensor.wedding_anniversary') >= 20 %}
+                red
+              {% else %}
+                null
+              {% endif %}
+            card_mod:
+              style: |
+                ha-card {
+                  background: rgba(255, 255, 255, 0.05);
+                  backdrop-filter: blur(4px);
+                  -webkit-backdrop-filter: blur(4px);
+                  border-radius: 10px;
+                  border: none;
+                }
+          - type: custom:mushroom-person-card
+            entity: person.richard
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            double_tap_action:
+              action: none
+            icon_type: entity-picture
+            card_mod:
+              style: |
+                ha-card {
+                  background: rgba(255, 255, 255, 0.05);
+                  backdrop-filter: blur(4px);
+                  -webkit-backdrop-filter: blur(4px);
+                  border-radius: 10px;
+                  border: none;
+                }
+          - type: custom:mushroom-person-card
+            entity: person.megan
+            layout: horizontal
+            fill_container: false
+            tap_action:
+              action: none
+            hold_action:
+              action: none
+            double_tap_action:
+              action: none
+            icon_type: entity-picture
+            card_mod:
+              style: |
+                ha-card {
+                  background: rgba(255, 255, 255, 0.05);
+                  backdrop-filter: blur(4px);
+                  -webkit-backdrop-filter: blur(4px);
+                  border-radius: 10px;
+                  border: none;
+                }
+        view_layout:
+          grid-area: topbar
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: '{{ states(''input_text.dashboard_output'')}}'
+            card_mod:
+              style: |
+                ha-card {
+                  background: rgba(255, 255, 255, 0.05);
+                  backdrop-filter: blur(7px);
+                  -webkit-backdrop-filter: blur(7px);
+                  border-radius: 10px;
+                  border: none;
+                  font-size: 15px;
+                  font-weight: 300;
+                }
+                  ha-markdown {
+                text-align: center;
+                display: flex;
+                justify-content: center; }
+          - type: markdown
+            content: '{{ states(''sensor.time'') }}'
+            card_mod:
+              style: |
+                ha-card {
+                  background: rgba(255, 255, 255, 0.05);
+                  backdrop-filter: blur(4px);
+                  -webkit-backdrop-filter: blur(4px);
+                  border-radius: 10px;
+                  border: none;
+                  font-size: 30px;
+                  font-weight: 400;
+                }
+                ha-markdown {
+                text-align: center;
+                display: flex;
+                justify-content: center; }
+          - entities:
+              - entity: calendar.richard
+                color: '#C62300'
+                label: Richard |
+                accent_color: '#C62300'
+              - entity: calendar.chelsea
+                color: '#0B2F9F'
+                accent_color: '#0B2F9F'
+              - entity: calendar.ghana
+                color: '#2a7e19'
+                accent_color: '#2a7e19'
+              - entity: calendar.christian_holidays
+                color: '#d4b02c'
+                accent_color: '#d4b02c'
+              - entity: calendar.movie_release
+                color: '#118B50'
+                accent_color: '#118B50'
+              - entity: calendar.megan
+                color: '#DE3163'
+                label: Megan |
+                accent_color: '#DE3163'
+            days_to_show: 6
+            compact_days_to_show: ''
+            compact_events_to_show: 7
+            show_empty_days: true
+            filter_duplicates: true
+            title: Family Calendar
+            title_font_size: ''
+            background_color: ''
+            today_indicator: pulse
+            date_vertical_alignment: top
+            weekend_weekday_color: '#C62E2E'
+            weekend_day_color: '#C62E2E'
+            weekend_month_color: '#C62E2E'
+            today_weekday_color: '#03a9f4'
+            today_day_color: '#03a9f4'
+            today_month_color: '#03a9f4'
+            show_past_events: true
+            show_countdown: true
+            event_font_size: 16px
+            empty_day_color: var(--secondary-text-color)
+            time_24h: false
+            weather:
+              position: date
+              date:
+                show_conditions: true
+                show_high_temp: true
+                show_low_temp: false
+                icon_size: 14px
+                font_size: 12px
+                color: var(--primary-text-color)
+              event:
+                show_conditions: true
+                show_temp: true
+                icon_size: 14px
+                font_size: 12px
+                color: var(--primary-text-color)
+              entity: weather.forecast_home
+            tap_action:
+              action: expand
+            type: custom:calendar-card-pro
+            card_mod:
+              style: |
+                :host {
+                  --calendar-card-background: rgba(255, 255, 255, 0.05) !important;
+                  backdrop-filter: blur(7px);
+                  -webkit-backdrop-filter: blur(7px);
+                  border-radius: 12px;
+                }
+
+                ha-card {
+                  background: rgba(255, 255, 255, 0.05) !important;
+                  backdrop-filter: blur(7px);
+                  -webkit-backdrop-filter: blur(7px);
+                  border-radius: 12px;
+                  border: none;
+                }
+        view_layout:
+          grid-area: calendar
+      - type: horizontal-stack
+        cards:
+          - type: custom:mushroom-template-card
+            primary: TIMERS
+            icon: mdi:timer
+            layout: horizontal
+            tap_action:
+              action: navigate
+              navigation_path: '#timer'
+            hold_action:
+              action: none
+            double_tap_action:
+              action: none
+            secondary: ''
+            icon_color: White
+            card_mod:
+              style: |
+                ha-card {
+                  background: rgba(255, 255, 255, 0.05);
+                  backdrop-filter: blur(4px);
+                  -webkit-backdrop-filter: blur(4px);
+                  border-radius: 10px;
+                  border: none;
+                }
+          - type: custom:mushroom-template-card
+            icon: mdi:hamburger
+            layout: horizontal
+            tap_action:
+              action: navigate
+              navigation_path: '#Timers'
+            hold_action:
+              action: none
+            double_tap_action:
+              action: none
+            secondary: ''
+            icon_color: White
+            primary: RECIPES
+            card_mod:
+              style: |
+                ha-card {
+                  background: rgba(255, 255, 255, 0.05);
+                  backdrop-filter: blur(4px);
+                  -webkit-backdrop-filter: blur(4px);
+                  border-radius: 10px;
+                  border: none;
+                }
+          - type: custom:mushroom-template-card
+            icon: mdi:vacuum
+            layout: horizontal
+            tap_action:
+              action: navigate
+              navigation_path: '#cleaning'
+            hold_action:
+              action: none
+            double_tap_action:
+              action: none
+            secondary: ''
+            icon_color: White
+            primary: CLEANING
+            card_mod:
+              style: |
+                ha-card {
+                  background: rgba(255, 255, 255, 0.05);
+                  backdrop-filter: blur(4px);
+                  -webkit-backdrop-filter: blur(4px);
+                  border-radius: 10px;
+                  border: none;
+                }
+          - type: custom:mushroom-template-card
+            icon: mdi:string-lights
+            layout: horizontal
+            tap_action:
+              action: navigate
+              navigation_path: '#light'
+            hold_action:
+              action: none
+            double_tap_action:
+              action: none
+            secondary: ''
+            icon_color: White
+            primary: LIGHTS
+            card_mod:
+              style: |
+                ha-card {
+                  background: rgba(255, 255, 255, 0.05);
+                  backdrop-filter: blur(4px);
+                  -webkit-backdrop-filter: blur(4px);
+                  border-radius: 10px;
+                  border: none;
+                }
+          - type: custom:mushroom-template-card
+            icon: mdi:music
+            layout: horizontal
+            tap_action:
+              action: navigate
+              navigation_path: '#music'
+            hold_action:
+              action: none
+            double_tap_action:
+              action: none
+            secondary: ''
+            icon_color: White
+            primary: MUSIC
+            card_mod:
+              style: |
+                ha-card {
+                  background: rgba(255, 255, 255, 0.05);
+                  backdrop-filter: blur(4px);
+                  -webkit-backdrop-filter: blur(4px);
+                  border-radius: 10px;
+                  border: none;
+                }
+        view_layout:
+          grid-area: bottombar
+      - type: vertical-stack
+        cards:
+          - type: custom:bubble-card
+            card_type: pop-up
+            hash: '#shopping'
+            button_type: name
+            name: Shopping Cart
+            icon: mdi:cart-heart
+            sub_button: []
+            show_header: true
+            auto_close: '150000'
+            margin: 7px
+            close_on_click: false
+            card_layout: normal
+          - display_order: none
+            type: todo-list
+            entity: todo.shopping_list
+            theme: Tablet
+            hide_completed: true
+            hide_create: false
+      - type: vertical-stack
+        cards:
+          - type: custom:bubble-card
+            card_type: pop-up
+            hash: '#light'
+            button_type: name
+            name: Lights
+            icon: mdi:lightbulb-group
+            sub_button: []
+            show_header: true
+            auto_close: '150000'
+            margin: 7px
+            close_on_click: false
+            card_layout: normal
+          - type: vertical-stack
+            view_layout:
+              grid-area: lights
+            cards:
+              - type: horizontal-stack
+                cards:
+                  - type: custom:mushroom-light-card
+                    entity: light.kitchen_lights
+                    name: Kitchen
+                    icon: phu:bulb-group-classic-hung-3-alt
+                    layout: vertical
+                    show_brightness_control: false
+                    show_color_control: false
+                    fill_container: false
+                    tap_action:
+                      action: toggle
+                  - type: custom:mushroom-light-card
+                    entity: light.living_room_lights
+                    name: Livingroom
+                    icon: phu:youtube-tv
+                    layout: vertical
+                    show_brightness_control: false
+                    show_color_control: false
+                    tap_action:
+                      action: toggle
+                  - type: custom:mushroom-light-card
+                    entity: light.bedroom_lights
+                    name: Bedroom
+                    icon: phu:rooms-bedroom
+                    layout: vertical
+                    show_brightness_control: false
+                    show_color_control: false
+                    tap_action:
+                      action: toggle
+                  - type: custom:mushroom-light-card
+                    entity: light.bathroom_lights
+                    name: Bathroom
+                    icon: phu:rooms-bathroom
+                    layout: vertical
+                    show_brightness_control: false
+                    show_color_control: false
+                    tap_action:
+                      action: toggle
+              - type: horizontal-stack
+                cards:
+                  - type: custom:mushroom-light-card
+                    entity: light.office_lights
+                    name: Office
+                    icon: phu:rooms-office
+                    layout: vertical
+                    show_brightness_control: false
+                    show_color_control: false
+                    tap_action:
+                      action: toggle
+                  - type: custom:mushroom-light-card
+                    entity: light.sengled_porch_light
+                    name: Porch
+                    icon: phu:rooms-porch
+                    layout: vertical
+                    show_brightness_control: false
+                    show_color_control: false
+                    tap_action:
+                      action: toggle
+                  - type: custom:mushroom-light-card
+                    entity: light.living_room_light_strip
+                    name: Strip
+                    icon: phu:light-strip
+                    layout: vertical
+                    show_brightness_control: false
+                    show_color_control: false
+                    tap_action:
+                      action: toggle
+                  - type: custom:mushroom-entity-card
+                    entity: switch.bedroom_lights_smart_plug
+                    name: Christmas
+                    icon: phu:christmas-tree
+                    layout: vertical
+                    tap_action:
+                      action: toggle
+      - type: vertical-stack
+        cards:
+          - type: custom:bubble-card
+            card_type: pop-up
+            hash: '#cleaning'
+            button_type: name
+            name: Cleaning
+            icon: mdi:robot-vacuum
+            sub_button: []
+            show_header: true
+            auto_close: '150000'
+            margin: 7px
+            close_on_click: false
+            card_layout: normal
+          - type: vertical-stack
+            cards:
+              - show_state: false
+                show_name: true
+                camera_view: auto
+                fit_mode: cover
+                type: picture-entity
+                entity: image.ned_map_0
+                image: /api/camera_proxy/image.ned_map_0
+                name: Ned's Map
+              - type: horizontal-stack
+                cards:
+                  - show_name: true
+                    show_icon: true
+                    type: button
+                    name: Hallway
+                    icon: mdi:file-cabinet
+                    tap_action:
+                      action: call-service
+                      service: script.robot_vacuum_room_clean
+                      data:
+                        room_id: 16
+                    theme: Tablet
+                  - show_name: true
+                    show_icon: true
+                    type: button
+                    name: Kitchen
+                    icon: mdi:silverware-fork-knife
+                    tap_action:
+                      action: call-service
+                      service: script.robot_vacuum_room_clean
+                      data:
+                        room_id: 17
+                    theme: Tablet
+                  - show_name: true
+                    show_icon: true
+                    type: button
+                    name: Living
+                    icon: mdi:sofa
+                    tap_action:
+                      action: call-service
+                      service: script.robot_vacuum_room_clean
+                      data:
+                        room_id: 18
+                    theme: Tablet
+                  - show_name: true
+                    show_icon: true
+                    type: button
+                    name: Bedroom
+                    icon: mdi:bed-queen
+                    tap_action:
+                      action: call-service
+                      service: script.robot_vacuum_room_clean
+                      data:
+                        room_id: 19
+                    theme: Tablet
+              - type: horizontal-stack
+                cards:
+                  - show_name: true
+                    show_icon: true
+                    type: button
+                    name: Office
+                    icon: mdi:microsoft-visual-studio-code
+                    tap_action:
+                      action: call-service
+                      service: script.robot_vacuum_room_clean
+                      data:
+                        room_id: 20
+                    theme: Tablet
+                    show_state: false
+                  - show_name: true
+                    show_icon: true
+                    type: button
+                    name: Bathroom
+                    icon: mdi:shower
+                    tap_action:
+                      action: call-service
+                      service: script.robot_vacuum_room_clean
+                      data:
+                        room_id: 21
+                    theme: Tablet
+                  - show_name: true
+                    show_icon: true
+                    type: button
+                    name: Full Clean
+                    icon: mdi:robot-vacuum
+                    tap_action:
+                      action: call-service
+                      service: button.press
+                      target:
+                        entity_id: button.ned_full_cleaning
+                    theme: Tablet
+                  - type: button
+                    name: Light
+                    icon: mdi:lightbulb-on-30
+                    show_name: true
+                    show_icon: true
+                    tap_action:
+                      action: call-service
+                      service: homeassistant.toggle
+                      target:
+                        entity_id: input_boolean.general_cleaning
+                    theme: Tablet
+              - type: horizontal-stack
+                cards:
+                  - type: custom:mushroom-template-card
+                    primary: Clean
+                    icon: mdi:play-circle
+                    icon_color: green
+                    tap_action:
+                      action: call-service
+                      service: vacuum.start
+                      target:
+                        entity_id: vacuum.ned
+                  - type: custom:mushroom-template-card
+                    primary: Pause
+                    icon: mdi:pause-circle
+                    icon_color: amber
+                    tap_action:
+                      action: call-service
+                      service: vacuum.pause
+                      target:
+                        entity_id: vacuum.ned
+                  - type: custom:mushroom-template-card
+                    primary: Dock
+                    icon: mdi:home-map-marker
+                    icon_color: red
+                    tap_action:
+                      action: call-service
+                      service: vacuum.return_to_base
+                      target:
+                        entity_id: vacuum.ned
+                  - type: custom:mushroom-template-card
+                    primary: Locate
+                    icon: mdi:crosshairs-gps
+                    icon_color: indigo
+                    tap_action:
+                      action: call-service
+                      service: vacuum.locate
+                      target:
+                        entity_id: vacuum.ned
+              - type: grid
+                columns: 3
+                square: false
+                cards:
+                  - type: custom:mushroom-template-card
+                    primary: Battery
+                    secondary: '{{ states(''sensor.ned_battery'') }}%'
+                    icon: mdi:battery
+                    icon_color: blue
+                  - type: custom:mushroom-template-card
+                    primary: Status
+                    secondary: >-
+                      {% if is_state('binary_sensor.ned_cleaning', 'on')
+                      %}Cleaning {% elif is_state('binary_sensor.ned_charging',
+                      'on') %}Charging {% else %}Idle{% endif %}
+                    icon: mdi:robot-vacuum
+                    icon_color: >-
+                      {% if is_state('binary_sensor.ned_cleaning', 'on') %}blue
+                      {% elif is_state('binary_sensor.ned_charging', 'on')
+                      %}green {% else %}grey{% endif %}
+                  - type: custom:mushroom-template-card
+                    primary: Room
+                    secondary: '{{ states(''sensor.ned_current_room'') }}'
+                    icon: mdi:door
+                    icon_color: purple
+              - square: false
+                type: grid
+                cards:
+                  - type: custom:mushroom-template-card
+                    primary: Filter
+                    secondary: >-
+                      {{ (states('sensor.ned_filter_time_left')|int / 3600) |
+                      round(1) }} hrs
+                    icon: mdi:air-filter
+                    icon_color: blue
+                  - type: custom:mushroom-template-card
+                    primary: Main Brush
+                    secondary: >-
+                      {{ (states('sensor.ned_main_brush_time_left')|int / 3600)
+                      | round(1) }} hrs
+                    icon: mdi:brush
+                    icon_color: orange
+                  - type: custom:mushroom-template-card
+                    primary: Side Brush
+                    secondary: >-
+                      {{ (states('sensor.ned_side_brush_time_left')|int / 3600)
+                      | round(1) }} hrs
+                    icon: mdi:brush-variant
+                    icon_color: teal
+                    multiline_secondary: false
+                columns: 3
+              - type: grid
+                columns: 3
+                square: false
+                cards:
+                  - type: custom:mushroom-template-card
+                    primary: Cleans
+                    secondary: '{{ states(''sensor.ned_total_cleaning_count'') }}'
+                    icon: mdi:history
+                    icon_color: amber
+                  - type: custom:mushroom-template-card
+                    primary: Time
+                    secondary: '{{ states(''sensor.ned_cleaning_time'') }} min'
+                    icon: mdi:clock-outline
+                    icon_color: blue
+                  - type: custom:mushroom-template-card
+                    primary: Area
+                    secondary: '{{ states(''sensor.ned_cleaning_area'') }} m²'
+                    icon: mdi:map
+                    icon_color: green
+      - type: vertical-stack
+        cards:
+          - type: custom:bubble-card
+            card_type: pop-up
+            hash: '#music'
+            button_type: name
+            name: Music
+            icon: mdi:music-circle-outline
+            sub_button: []
+            show_header: true
+            auto_close: '150000'
+            margin: 7px
+            close_on_click: false
+            card_layout: normal
+          - type: custom:mushroom-template-card
+            primary: Cooking Tunes
+            icon: mdi:music
+            entity: input_boolean.cooking_time
+            layout: vertical
+            tap_action:
+              action: toggle
+            double_tap_action:
+              action: more-info
+            icon_color: |
+              {% if is_state('input_boolean.cooking_time', 'on') %}
+                green
+              {% else %}
+                disabled
+              {% endif %}
+            card_mod:
+              style: |
+                mushroom-shape-icon {
+                  --icon-size: 64px;
+                }
+                ha-card {
+                  background: none;
+                  box-shadow: none;
+                  border: none;
+                }
+          - square: true
+            type: grid
+            cards:
+              - type: custom:mini-media-player
+                entity: media_player.kitchen_speaker
+                artwork: full-cover
+                volume_stateless: false
+                sound_mode: full
+                group: false
+                source: icon
+                replace_mute: next
+            columns: 1
+      - type: vertical-stack
+        cards:
+          - type: custom:bubble-card
+            card_type: pop-up
+            hash: '#timer'
+            button_type: name
+            name: Timers
+            icon: mdi:timer-alert-outline
+            sub_button: []
+            show_header: true
+            auto_close: '150000'
+            margin: 7px
+            close_on_click: false
+            card_layout: normal
+          - type: custom:mushroom-template-card
+            primary: >
+              {% set t = states.timer.custom_countdown %} {% if t.state ==
+              'active' %}
+                {{ t.attributes.remaining }}
+              {% else %}
+                No timer running
+              {% endif %}
+            icon: mdi:timer-outline
+            icon_color: green
+            layout: vertical
+            tap_action:
+              action: more-info
+            entity: timer.custom_countdown
+            card_mod:
+              style: |
+                ha-card {
+                  background: none;
+                  box-shadow: none;
+                }
+          - type: vertical-stack
+            cards:
+              - type: horizontal-stack
+                cards:
+                  - type: custom:mushroom-template-card
+                    primary: 5 Min
+                    icon: mdi:timer-sand
+                    icon_color: green
+                    tap_action:
+                      action: call-service
+                      service: script.start_custom_timer
+                      data:
+                        duration: 300
+                    layout: vertical
+                  - type: custom:mushroom-template-card
+                    primary: 10 Min
+                    icon: mdi:timer-sand
+                    icon_color: green
+                    tap_action:
+                      action: call-service
+                      service: script.start_custom_timer
+                      data:
+                        duration: 600
+                    layout: vertical
+                  - type: custom:mushroom-template-card
+                    primary: 15 Min
+                    icon: mdi:timer-sand
+                    icon_color: green
+                    tap_action:
+                      action: call-service
+                      service: script.start_custom_timer
+                      data:
+                        duration: 900
+                    layout: vertical
+              - type: horizontal-stack
+                cards:
+                  - type: custom:mushroom-template-card
+                    primary: 20 Min
+                    icon: mdi:timer-sand
+                    icon_color: green
+                    tap_action:
+                      action: call-service
+                      service: script.start_custom_timer
+                      data:
+                        duration: 1200
+                    layout: vertical
+                  - type: custom:mushroom-template-card
+                    primary: 30 Min
+                    icon: mdi:timer-sand
+                    icon_color: green
+                    tap_action:
+                      action: call-service
+                      service: script.start_custom_timer
+                      data:
+                        duration: 1800
+                    layout: vertical
+                  - type: custom:mushroom-template-card
+                    primary: 45 Min
+                    icon: mdi:timer-sand
+                    icon_color: green
+                    tap_action:
+                      action: call-service
+                      service: script.start_custom_timer
+                      data:
+                        duration: 2700
+                    layout: vertical
+              - type: horizontal-stack
+                cards:
+                  - type: custom:mushroom-template-card
+                    primary: 1 Hour
+                    icon: mdi:timer-sand
+                    icon_color: green
+                    tap_action:
+                      action: call-service
+                      service: script.start_custom_timer
+                      data:
+                        duration: 3600
+                    layout: vertical
+                  - type: custom:mushroom-template-card
+                    primary: Cancel
+                    icon: mdi:timer-off
+                    icon_color: red
+                    tap_action:
+                      action: call-service
+                      service: timer.cancel
+                      data:
+                        entity_id: timer.custom_countdown
+                    layout: vertical
+    background:
+      opacity: 80
+      alignment: center
+      size: cover
+      repeat: no-repeat
+      attachment: fixed
+      image: /api/image/serve/ce8579082d057339159bdaaa2ea54f50/original
