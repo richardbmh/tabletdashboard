@@ -1,277 +1,2404 @@
 kiosk_mode:
-  non_admin_settings:
-    kiosk: true
-    ignore_entity_settings: true
-  entity_settings:
-    - entity:
-        input_boolean.kiosk_mode: 'on'
-      hide_header: true
-    - entity:
-        input_boolean.kiosk_mode: 'off'
-      hide_header: false
+  hide_header: '{{ is_state(''input_boolean.kiosk_mode_tablet'', ''on'') }}'
+  hide_sidebar: '{{ is_state(''input_boolean.kiosk_mode_tablet'', ''on'') }}'
+  hide_overflow: '{{ is_state(''input_boolean.kiosk_mode_tablet'', ''on'') }}'
 views:
-  - title: HOME
+  - title: Home
+    path: home
+    icon: mdi:home
     type: custom:grid-layout
-    layout:
-      grid-template-columns: 25% 22.5% 22.5% 22.5%
-      grid-column-gap: 18pt
-      grid-template-rows: 80px 1fr 80px
-      grid-template-areas: |
-        "topbar topbar topbar topbar"
-        ". calendar calendar  ."
-        "bottombar bottombar bottombar bottombar"
+    badges: []
     cards:
-      - type: horizontal-stack
+      - type: custom:layout-card
+        layout_type: custom:grid-layout
+        layout:
+          grid-template-columns: minmax(330px, 1.1fr) minmax(170px, 0.5fr) minmax(280px, 1fr)
+          grid-template-rows: auto 1fr
+          grid-template-areas: |
+            "header  header  header"
+            "rooms   status  media"
+          grid-column-gap: 14px
+          grid-row-gap: 2px
+          padding: 6px
+          mediaquery:
+            '(max-width: 760px)':
+              grid-template-columns: 100%
+              grid-template-areas: |
+                "header"
+                "status"
+                "rooms"
+                "media"
         cards:
-          - type: custom:mushroom-template-card
-            primary: Lighting
-            secondary: '{{ states(''sensor.lights_on_counter'') }} Lights Are On'
-            icon: mdi:lightbulb-group-outline
-            icon_color: |-
-              {% if states('sensor.lights_on_counter') == '0' %}
-                white
-              {% else %}
-                amber
-              {% endif %}
-            layout: horizontal
+          - type: custom:layout-card
+            layout_type: custom:grid-layout
+            layout:
+              grid-template-columns: auto auto 1fr
+              grid-template-areas: |
+                "title weather security"
+              grid-gap: 10px
+              align-items: center
+              mediaquery:
+                '(max-width: 760px)':
+                  grid-template-columns: auto 1fr
+                  grid-template-areas: |
+                    "title weather"
+                    "security security"
+            cards:
+              - view_layout:
+                  grid-area: title
+                type: custom:mushroom-title-card
+                title: Home
+                subtitle: >-
+                  {% set h = now().hour %}{{ 'Good Morning' if h < 12 else 'Good
+                  Afternoon' if h < 18 else 'Good Evening' }}
+                alignment: start
+                card_mod:
+                  style: >
+                    ha-card { background: transparent !important; border: none
+                    !important; box-shadow: none !important; padding: 0px 4px 0
+                    !important; margin: 0 !important; height: 100% !important;
+                    display: flex !important; flex-direction: column !important;
+                    justify-content: center !important; }
+
+                    .title { font-size: 24px !important; font-weight: 700
+                    !important; line-height: 1.1 !important; }
+
+                    .subtitle { font-size: 13px !important; color: #ffffff
+                    !important; opacity: 1 !important; font-weight: 700
+                    !important; letter-spacing: 1px !important; text-transform:
+                    uppercase !important; line-height: 1.1 !important; }
+              - view_layout:
+                  grid-area: weather
+                type: custom:mushroom-template-card
+                primary: '{{ now().strftime(''%A, %B '') ~ now().day }}'
+                secondary: >-
+                  {% set t = state_attr('weather.forecast_home','temperature')
+                  %} {{ t | round(0) }}°  ·  {{ states('weather.forecast_home')
+                  | replace('-', ' ') | title }}
+                icon: >-
+                  {% set c = states('weather.forecast_home') %} {% set map =
+                  {'sunny':'mdi:weather-sunny','clear-night':'mdi:weather-night',
+                  'partlycloudy':'mdi:weather-partly-cloudy','cloudy':'mdi:weather-cloudy',
+                  'rainy':'mdi:weather-rainy','pouring':'mdi:weather-pouring','snowy':'mdi:weather-snowy',
+                  'fog':'mdi:weather-fog','windy':'mdi:weather-windy','lightning':'mdi:weather-lightning',
+                  'lightning-rainy':'mdi:weather-lightning-rainy','hail':'mdi:weather-hail'}
+                  %} {{ map.get(c, 'mdi:weather-partly-cloudy') }}
+                layout: horizontal
+                fill_container: false
+                tap_action:
+                  action: more-info
+                entity: weather.forecast_home
+                icon_color: accent
+                card_mod:
+                  style: >
+                    ha-card { background: transparent !important; border: none
+                    !important; box-shadow: none !important; padding: 0
+                    !important; margin: 0 !important; height: 100% !important;
+                    display: flex !important; align-items: center !important;
+                    justify-content: flex-start !important; }
+              - view_layout:
+                  grid-area: security
+                type: custom:mushroom-chips-card
+                alignment: end
+                chips:
+                  - type: conditional
+                    conditions:
+                      - entity: input_boolean.vacation_mode
+                        state: 'on'
+                    chip:
+                      type: template
+                      entity: input_boolean.vacation_mode
+                      icon: mdi:airplane
+                      icon_color: blue
+                      content: Vacation
+                      tap_action:
+                        action: more-info
+                      hold_action:
+                        action: toggle
+                  - type: conditional
+                    conditions:
+                      - entity: input_boolean.guest_mode
+                        state: 'on'
+                    chip:
+                      type: template
+                      entity: input_boolean.guest_mode
+                      icon: mdi:account-multiple
+                      icon_color: purple
+                      content: Guests
+                      tap_action:
+                        action: more-info
+                      hold_action:
+                        action: toggle
+                  - type: conditional
+                    conditions:
+                      - entity: sensor.trash
+                        state: Trash
+                    chip:
+                      type: template
+                      entity: sensor.trash
+                      icon: mdi:trash-can
+                      icon_color: green
+                      content: Trash Day
+                      tap_action:
+                        action: more-info
+                  - type: conditional
+                    conditions:
+                      - entity: sensor.trash
+                        state: Closing Soon
+                    chip:
+                      type: template
+                      entity: sensor.trash
+                      icon: mdi:clock-alert
+                      icon_color: orange
+                      content: Trash Soon
+                      tap_action:
+                        action: more-info
+                  - type: conditional
+                    conditions:
+                      - entity: sensor.carvin_elvehplug
+                        state: CONNECTED
+                    chip:
+                      type: template
+                      entity: sensor.carvin_elvehplug
+                      icon: mdi:ev-station
+                      icon_color: >-
+                        {{ 'green' if
+                        is_state('binary_sensor.richards_mach_e_mach_e_home_charging','on')
+                        else 'blue' }}
+                      content: Plugged In
+                      tap_action:
+                        action: more-info
+                  - type: template
+                    entity: alarm_control_panel.alarmo
+                    icon: >-
+                      {% set s = states('alarm_control_panel.alarmo') %} {% if s
+                      == 'disarmed' %}mdi:shield-off-outline{% elif s ==
+                      'triggered' %}mdi:bell-ring{% elif s in
+                      ['arming','pending'] %}mdi:shield-sync{% elif s ==
+                      'armed_night' %}mdi:shield-moon{% elif s == 'armed_away'
+                      %}mdi:shield-lock{% else %}mdi:shield-home{% endif %}
+                    icon_color: >-
+                      {% set s = states('alarm_control_panel.alarmo') %} {% if s
+                      == 'disarmed' %}grey{% elif s == 'triggered' %}red{% elif
+                      s in ['arming','pending'] %}orange{% else %}green{% endif
+                      %}
+                    content: >-
+                      {% set s = states('alarm_control_panel.alarmo') %} {{
+                      'Armed ' ~ (s[6:] | replace('_',' ') | title) if
+                      s.startswith('armed_') else s | replace('_',' ') | title
+                      }}
+                    tap_action:
+                      action: navigate
+                      navigation_path: '#alarm'
+                  - type: template
+                    entity: lock.front_lock
+                    icon: >-
+                      {% if is_state('binary_sensor.front_door_cs_contact','on')
+                      %}mdi:door-open{% elif
+                      is_state('lock.front_lock','locked') %}mdi:lock{% else
+                      %}mdi:lock-open-variant{% endif %}
+                    icon_color: >-
+                      {% if is_state('binary_sensor.front_door_cs_contact','on')
+                      %}red{% elif is_state('lock.front_lock','locked')
+                      %}green{% else %}orange{% endif %}
+                    content: Front
+                    tap_action:
+                      action: navigate
+                      navigation_path: '#front-door'
+                    hold_action:
+                      action: toggle
+                  - type: template
+                    entity: lock.back_door
+                    icon: >-
+                      {% if is_state('binary_sensor.back_door_cs_contact','on')
+                      %}mdi:door-open{% elif is_state('lock.back_door','locked')
+                      %}mdi:lock{% else %}mdi:lock-open-variant{% endif %}
+                    icon_color: >-
+                      {% if is_state('binary_sensor.back_door_cs_contact','on')
+                      %}red{% elif is_state('lock.back_door','locked') %}green{%
+                      else %}orange{% endif %}
+                    content: Back
+                    tap_action:
+                      action: navigate
+                      navigation_path: '#back-door'
+                    hold_action:
+                      action: toggle
+                  - type: template
+                    entity: todo.shopping_list
+                    icon: mdi:cart-variant
+                    icon_color: >-
+                      {{ 'orange' if states('todo.shopping_list') | int(0) > 0
+                      else 'grey' }}
+                    content: '{{ states(''todo.shopping_list'') | int(0) }}'
+                    tap_action:
+                      action: navigate
+                      navigation_path: '#shopping'
+                  - type: template
+                    icon: mdi:calendar
+                    icon_color: accent
+                    tap_action:
+                      action: navigate
+                      navigation_path: '#calendar'
+                  - type: template
+                    entity: input_boolean.guest_mode
+                    icon: mdi:wifi
+                    icon_color: >-
+                      {{ 'green' if is_state('input_boolean.guest_mode','on')
+                      else 'accent' }}
+                    tap_action:
+                      action: navigate
+                      navigation_path: '#guestwifi'
+                  - type: template
+                    icon: mdi:microphone
+                    icon_color: accent
+                    tap_action:
+                      action: assist
+                      pipeline_id: preferred
+                      start_listening: true
+                  - type: template
+                    entity: input_boolean.kiosk_mode_tablet
+                    icon: mdi:fit-to-screen-outline
+                    icon_color: >-
+                      {{ 'blue' if
+                      is_state('input_boolean.kiosk_mode_tablet','on') else
+                      'grey' }}
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: more-info
+                card_mod:
+                  style: |
+                    ha-card {
+                      background: none;
+                      box-shadow: none;
+                      border: none;
+                      --chip-background: rgba(255,255,255,0.07);
+                      --chip-height: 40px;
+                      --chip-border-radius: 14px;
+                      --chip-font-size: 13px;
+                      --chip-icon-size: 20px;
+                      --chip-padding: 0 12px;
+                      --chip-spacing: 8px;
+                    }
+            view_layout:
+              grid-area: header
+          - type: vertical-stack
+            cards:
+              - type: custom:layout-card
+                layout_type: custom:grid-layout
+                layout:
+                  grid-template-columns: auto 1fr
+                  grid-template-areas: |
+                    "title status"
+                  align-items: center
+                  grid-gap: 6px
+                  padding: 0
+                  margin: 0
+                cards:
+                  - type: heading
+                    heading: Bathroom
+                    heading_style: subtitle
+                    view_layout:
+                      grid-area: title
+                    tap_action:
+                      action: perform-action
+                      perform_action: homeassistant.turn_off
+                      target:
+                        entity_id:
+                          - light.main_bathroom_lights
+                          - switch.bathroom_light
+                          - switch.bathroom_fan
+                          - light.master_bathroom_lamp
+                    card_mod:
+                      style: >
+                        ha-card { background: transparent !important; border:
+                        none !important; box-shadow: none !important; }
+                        .subtitle { font-size: 13px !important; color: #ffffff
+                        !important; opacity: 1 !important; font-weight: 700
+                        !important; letter-spacing: 1px !important;
+                        text-transform: uppercase !important; }
+                  - type: custom:mushroom-chips-card
+                    alignment: end
+                    view_layout:
+                      grid-area: status
+                    chips:
+                      - type: template
+                        entity: sensor.main_bathroom_th_humidity
+                        icon: mdi:water-percent
+                        icon_color: >-
+                          {% set h = states('sensor.main_bathroom_th_humidity')
+                          | float(0) %} {{ 'blue' if h >= 70 else 'grey' }}
+                        content: >-
+                          {{ states('sensor.main_bathroom_th_humidity') |
+                          float(0) | round(0) | int }}%
+                        tap_action:
+                          action: more-info
+                    card_mod:
+                      style: |
+                        ha-card {
+                          background: none;
+                          box-shadow: none;
+                          border: none;
+                          --chip-background: transparent;
+                          --chip-box-shadow: none;
+                          --chip-border-width: 0;
+                          --chip-height: 28px;
+                          --chip-padding: 0 4px;
+                          --chip-font-size: 12px;
+                          --chip-font-weight: 600;
+                          --chip-icon-size: 16px;
+                        }
+              - type: grid
+                columns: 2
+                square: false
+                cards:
+                  - type: button
+                    name: Mirror
+                    icon: mdi:wall-sconce
+                    entity: light.main_bathroom_lights
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: navigate
+                      navigation_path: '#light-bath-mirror'
+                    card_mod:
+                      style: >
+                        {% set active =
+                        is_state('light.main_bathroom_lights','on') %} ha-card {
+                        border-radius: 14px; border: none; box-shadow: none;
+                        padding: 10px 2px !important; font-size: 12px;
+                        --paper-item-icon-color: {{ '#26A69A' if active else
+                        'var(--secondary-text-color)' }}; }
+                  - type: button
+                    name: Ceiling
+                    icon: mdi:light-recessed
+                    entity: switch.bathroom_light
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: more-info
+                    card_mod:
+                      style: >
+                        {% set active = is_state('switch.bathroom_light','on')
+                        %} ha-card { border-radius: 14px; border: none;
+                        box-shadow: none; padding: 10px 2px !important;
+                        font-size: 12px; --paper-item-icon-color: {{ '#26A69A'
+                        if active else 'var(--secondary-text-color)' }}; }
+                  - type: button
+                    name: Exhaust
+                    icon: mdi:fan
+                    entity: switch.bathroom_fan
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: more-info
+                    card_mod:
+                      style: >
+                        {% set active = is_state('switch.bathroom_fan','on') %}
+                        ha-card { border-radius: 14px; border: none; box-shadow:
+                        none; padding: 10px 2px !important; font-size: 12px;
+                        --paper-item-icon-color: {{ '#26A69A' if active else
+                        'var(--secondary-text-color)' }}; }
+                  - type: button
+                    name: Lamp
+                    icon: mdi:lamp
+                    entity: light.master_bathroom_lamp
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: navigate
+                      navigation_path: '#light-bath-lamp'
+                    card_mod:
+                      style: >
+                        {% set active =
+                        is_state('light.master_bathroom_lamp','on') %} ha-card {
+                        border-radius: 14px; border: none; box-shadow: none;
+                        padding: 10px 2px !important; font-size: 12px;
+                        --paper-item-icon-color: {{ '#26A69A' if active else
+                        'var(--secondary-text-color)' }}; }
+              - type: heading
+                heading: Climate & Home
+                heading_style: subtitle
+                card_mod:
+                  style: >
+                    ha-card { background: transparent !important; border: none
+                    !important; box-shadow: none !important; } .subtitle {
+                    font-size: 13px !important; color: #ffffff !important;
+                    opacity: 1 !important; font-weight: 700 !important;
+                    letter-spacing: 1px !important; text-transform: uppercase
+                    !important; }
+              - type: grid
+                columns: 2
+                square: false
+                cards:
+                  - type: custom:mushroom-template-card
+                    entity: climate.master_bedroom
+                    primary: Upstairs
+                    secondary: >-
+                      {% set cur =
+                      state_attr('climate.master_bedroom','current_temperature')
+                      | float(0) | round(0) | int %} {% set t =
+                      state_attr('climate.master_bedroom','temperature') %} {{
+                      cur }}°{% if t is not none %} → {{ t | float(0) | round(0)
+                      | int }}°{% endif %}
+                    icon: >-
+                      {% set a =
+                      (state_attr('climate.master_bedroom','hvac_action') or
+                      states('climate.master_bedroom')) %} {% if a == 'heating'
+                      %}mdi:fire{% elif a == 'cooling' %}mdi:snowflake{% elif a
+                      == 'fan' %}mdi:fan{% else %}mdi:thermostat{% endif %}
+                    icon_color: >-
+                      {% set a =
+                      (state_attr('climate.master_bedroom','hvac_action') or
+                      states('climate.master_bedroom')) %} {% if a == 'heating'
+                      %}deep-orange{% elif a == 'cooling' %}blue{% elif a ==
+                      'fan' %}teal{% else %}grey{% endif %}
+                    layout: vertical
+                    multiline_secondary: true
+                    tap_action:
+                      action: navigate
+                      navigation_path: '#climate-upstairs'
+                    card_mod:
+                      style: >
+                        ha-card { border-radius: 14px; box-shadow: none;
+                        padding: 10px 4px !important;
+                          --card-primary-font-size: 13px; --card-secondary-font-size: 11px;
+                          --icon-size: 38px; text-align: center; }
+                  - type: custom:mushroom-template-card
+                    entity: climate.my_ecobee
+                    primary: Downstairs
+                    secondary: >-
+                      {% set cur =
+                      state_attr('climate.my_ecobee','current_temperature') |
+                      float(0) | round(0) | int %} {% set t =
+                      state_attr('climate.my_ecobee','temperature') %} {{ cur
+                      }}°{% if t is not none %} → {{ t | float(0) | round(0) |
+                      int }}°{% endif %}
+                    icon: >-
+                      {% set a = (state_attr('climate.my_ecobee','hvac_action')
+                      or states('climate.my_ecobee')) %} {% if a == 'heating'
+                      %}mdi:fire{% elif a == 'cooling' %}mdi:snowflake{% elif a
+                      == 'fan' %}mdi:fan{% else %}mdi:thermostat{% endif %}
+                    icon_color: >-
+                      {% set a = (state_attr('climate.my_ecobee','hvac_action')
+                      or states('climate.my_ecobee')) %} {% if a == 'heating'
+                      %}deep-orange{% elif a == 'cooling' %}blue{% elif a ==
+                      'fan' %}teal{% else %}grey{% endif %}
+                    layout: vertical
+                    multiline_secondary: true
+                    tap_action:
+                      action: navigate
+                      navigation_path: '#climate-downstairs'
+                    card_mod:
+                      style: >
+                        ha-card { border-radius: 14px; box-shadow: none;
+                        padding: 10px 4px !important;
+                          --card-primary-font-size: 13px; --card-secondary-font-size: 11px;
+                          --icon-size: 38px; text-align: center; }
+              - type: grid
+                columns: 2
+                square: false
+                cards:
+                  - type: custom:mushroom-template-card
+                    primary: Safety
+                    secondary: >-
+                      {% set l =
+                      ['binary_sensor.basement_water_leak_water_leak','binary_sensor.kitchen_sink_water_leak_water_leak','binary_sensor.klippbok_water_leak_sensor_water_leak_2','binary_sensor.main_bathroom_sink_water_leak_water_leak','binary_sensor.klippbok_water_leak_sensor_water_leak_3','binary_sensor.top_floor_bathroom_sink_water_leak_water_leak','binary_sensor.klippbok_water_leak_sensor_water_leak']
+                      | select('is_state','on') | list | count %} {% set s =
+                      ['binary_sensor.basement_floor_smoke','binary_sensor.kitchen_alarm_smoke','binary_sensor.top_floor_hallway_smoke']
+                      | select('is_state','on') | list | count %} {% if s > 0
+                      %}Smoke!{% elif l > 0 %}{{ l }} leak{{ 's' if l > 1 }}!{%
+                      else %}All clear{% endif %}
+                    icon: >-
+                      {% set l =
+                      ['binary_sensor.basement_water_leak_water_leak','binary_sensor.kitchen_sink_water_leak_water_leak','binary_sensor.klippbok_water_leak_sensor_water_leak_2','binary_sensor.main_bathroom_sink_water_leak_water_leak','binary_sensor.klippbok_water_leak_sensor_water_leak_3','binary_sensor.top_floor_bathroom_sink_water_leak_water_leak','binary_sensor.klippbok_water_leak_sensor_water_leak']
+                      | select('is_state','on') | list | count %} {% set s =
+                      ['binary_sensor.basement_floor_smoke','binary_sensor.kitchen_alarm_smoke','binary_sensor.top_floor_hallway_smoke']
+                      | select('is_state','on') | list | count %} {% if s > 0
+                      %}mdi:smoke-detector-alert{% elif l > 0
+                      %}mdi:water-alert{% else %}mdi:shield-check{% endif %}
+                    icon_color: >-
+                      {% set l =
+                      ['binary_sensor.basement_water_leak_water_leak','binary_sensor.kitchen_sink_water_leak_water_leak','binary_sensor.klippbok_water_leak_sensor_water_leak_2','binary_sensor.main_bathroom_sink_water_leak_water_leak','binary_sensor.klippbok_water_leak_sensor_water_leak_3','binary_sensor.top_floor_bathroom_sink_water_leak_water_leak','binary_sensor.klippbok_water_leak_sensor_water_leak']
+                      | select('is_state','on') | list | count %} {% set s =
+                      ['binary_sensor.basement_floor_smoke','binary_sensor.kitchen_alarm_smoke','binary_sensor.top_floor_hallway_smoke']
+                      | select('is_state','on') | list | count %} {{ 'red' if (l
+                      + s) > 0 else 'green' }}
+                    layout: vertical
+                    multiline_secondary: true
+                    tap_action:
+                      action: navigate
+                      navigation_path: '#safety'
+                    card_mod:
+                      style: >
+                        ha-card { border-radius: 14px; box-shadow: none;
+                        padding: 10px 4px !important;
+                          --card-primary-font-size: 13px; --card-secondary-font-size: 11px;
+                          --icon-size: 38px; text-align: center; }
+                  - type: custom:mushroom-template-card
+                    entity: sensor.carvin_elveh
+                    primary: Pony
+                    secondary: >-
+                      {{ states('sensor.carvin_elveh') |
+                      float(0) | round(0) | int }} mi · {{
+                      states('sensor.carvin_soc') | int(0)
+                      }}%{{ ' ⚡' if
+                      is_state('binary_sensor.richards_mach_e_mach_e_home_charging','on')
+                      }}
+                    icon: >-
+                      {{ 'mdi:ev-station' if
+                      is_state('binary_sensor.richards_mach_e_mach_e_home_charging','on')
+                      else 'mdi:car-electric' }}
+                    icon_color: >-
+                      {% set r =
+                      states('sensor.carvin_elveh') |
+                      float(0) | round(0) | int %} {% if
+                      is_state('binary_sensor.richards_mach_e_mach_e_home_charging','on')
+                      %}green{% elif r >= 100 %}teal{% elif r >= 40 %}amber{%
+                      else %}red{% endif %}
+                    layout: vertical
+                    multiline_secondary: true
+                    tap_action:
+                      action: navigate
+                      navigation_path: '#pony'
+                    card_mod:
+                      style: >
+                        ha-card { border-radius: 14px; box-shadow: none;
+                        padding: 10px 4px !important;
+                          --card-primary-font-size: 13px; --card-secondary-font-size: 11px;
+                          --icon-size: 38px; text-align: center; }
+              - type: custom:mushroom-template-card
+                entity: light.all_lights
+                primary: Lights
+                secondary: >-
+                  {% set n = states('sensor.lights_on_counter') | int(0) %} {{
+                  'All off' if n == 0 else n ~ ' on' }}
+                icon: mdi:lightbulb-group
+                icon_color: >-
+                  {{ 'amber' if states('sensor.lights_on_counter') | int(0) > 0
+                  else 'grey' }}
+                layout: horizontal
+                fill_container: true
+                tap_action:
+                  action: more-info
+                hold_action:
+                  action: perform-action
+                  perform_action: light.turn_off
+                  target:
+                    entity_id: light.all_lights
+                card_mod:
+                  style: |
+                    ha-card { border-radius: 14px; box-shadow: none;
+                      --card-primary-font-size: 13px; --card-secondary-font-size: 11px; }
+              - type: custom:mushroom-template-card
+                entity: vacuum.mowgli
+                primary: Vacuum
+                secondary: '{{ states(''vacuum.mowgli'') | replace(''_'','' '') | title }}'
+                icon: mdi:robot-vacuum
+                icon_color: >-
+                  {% set s = states('vacuum.mowgli') %} {% if s == 'cleaning'
+                  %}green{% elif s == 'returning' %}blue{% elif s == 'error'
+                  %}red{% else %}grey{% endif %}
+                layout: horizontal
+                fill_container: true
+                tap_action:
+                  action: navigate
+                  navigation_path: '#cleaning'
+                card_mod:
+                  style: |
+                    ha-card { border-radius: 14px; box-shadow: none;
+                      --card-primary-font-size: 13px; --card-secondary-font-size: 11px; }
+              - type: custom:mushroom-template-card
+                primary: Outdoor
+                secondary: >-
+                  {% set n =
+                  ['light.front_porch','light.patio','light.front_view_floodlight','light.west_yard_floodlight','light.back_yard_floodlight']
+                  | select('is_state','on') | list | count %} {{ 'All off' if n
+                  == 0 else n ~ ' on' }}
+                icon: mdi:outdoor-lamp
+                icon_color: >-
+                  {{ 'amber' if
+                  ['light.front_porch','light.patio','light.front_view_floodlight','light.west_yard_floodlight','light.back_yard_floodlight']
+                  | select('is_state','on') | list | count > 0 else 'grey' }}
+                layout: horizontal
+                fill_container: true
+                tap_action:
+                  action: navigate
+                  navigation_path: '#outdoor'
+                card_mod:
+                  style: |
+                    ha-card { border-radius: 14px; box-shadow: none;
+                      --card-primary-font-size: 13px; --card-secondary-font-size: 11px; }
+            view_layout:
+              grid-area: status
+          - type: vertical-stack
+            cards:
+              - type: heading
+                heading: Kitchen
+                heading_style: subtitle
+                tap_action:
+                  action: perform-action
+                  perform_action: light.turn_off
+                  target:
+                    entity_id:
+                      - light.kitchen_sink_sw
+                      - light.kitchen_lamp
+                      - light.kitchen_cabinet
+                      - light.kitchen_cabinet_segment_1
+                card_mod:
+                  style: >
+                    ha-card { background: transparent !important; border: none
+                    !important; box-shadow: none !important; } .subtitle {
+                    font-size: 13px !important; color: #ffffff !important;
+                    opacity: 1 !important; font-weight: 700 !important;
+                    letter-spacing: 1px !important; text-transform: uppercase
+                    !important; }
+              - type: grid
+                columns: 4
+                square: false
+                cards:
+                  - type: button
+                    name: All
+                    icon: mdi:lightbulb-group
+                    entity: light.kitchen_lights
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: more-info
+                    card_mod:
+                      style: >
+                        {% set active = is_state('light.kitchen_lights','on') %}
+                        ha-card { border-radius: 14px; border: none; box-shadow:
+                        none; padding: 10px 2px !important; font-size: 12px;
+                        --paper-item-icon-color: {{ '#C9A227' if active else
+                        'var(--secondary-text-color)' }}; }
+                  - type: button
+                    name: Recess
+                    icon: mdi:light-recessed
+                    entity: light.kitchen_sink_sw
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: navigate
+                      navigation_path: '#light-kitchen-recess'
+                    card_mod:
+                      style: >
+                        {% set active = is_state('light.kitchen_sink_sw','on')
+                        %} ha-card { border-radius: 14px; border: none;
+                        box-shadow: none; padding: 10px 2px !important;
+                        font-size: 12px; --paper-item-icon-color: {{ '#C9A227'
+                        if active else 'var(--secondary-text-color)' }}; }
+                  - type: button
+                    name: Lamp
+                    icon: mdi:lamp-outline
+                    entity: light.kitchen_lamp
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: navigate
+                      navigation_path: '#light-kitchen-lamp'
+                    card_mod:
+                      style: >
+                        {% set active = is_state('light.kitchen_lamp','on') %}
+                        ha-card { border-radius: 14px; border: none; box-shadow:
+                        none; padding: 10px 2px !important; font-size: 12px;
+                        --paper-item-icon-color: {{ '#C9A227' if active else
+                        'var(--secondary-text-color)' }}; }
+                  - type: button
+                    name: Top LED
+                    icon: mdi:led-strip
+                    entity: light.kitchen_cabinet
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: navigate
+                      navigation_path: '#light-kitchen-top'
+                    card_mod:
+                      style: >
+                        {% set active = is_state('light.kitchen_cabinet','on')
+                        %} ha-card { border-radius: 14px; border: none;
+                        box-shadow: none; padding: 10px 2px !important;
+                        font-size: 12px; --paper-item-icon-color: {{ '#C9A227'
+                        if active else 'var(--secondary-text-color)' }}; }
+                  - type: button
+                    name: Bottom LED
+                    icon: mdi:led-strip-variant
+                    entity: light.kitchen_cabinet_segment_1
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: navigate
+                      navigation_path: '#light-kitchen-bottom'
+                    card_mod:
+                      style: >
+                        {% set active =
+                        is_state('light.kitchen_cabinet_segment_1','on') %}
+                        ha-card { border-radius: 14px; border: none; box-shadow:
+                        none; padding: 10px 2px !important; font-size: 12px;
+                        --paper-item-icon-color: {{ '#C9A227' if active else
+                        'var(--secondary-text-color)' }}; }
+                  - type: button
+                    name: Coffee
+                    icon: mdi:coffee-maker-outline
+                    entity: switch.coffee_station_sp
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: more-info
+                    card_mod:
+                      style: >
+                        {% set active =
+                        is_state('switch.coffee_station_sp','on') %} ha-card {
+                        border-radius: 14px; border: none; box-shadow: none;
+                        padding: 10px 2px !important; font-size: 12px;
+                        --paper-item-icon-color: {{ '#C9A227' if active else
+                        'var(--secondary-text-color)' }}; }
+                  - type: button
+                    name: Cozy
+                    icon: mdi:string-lights
+                    entity: input_boolean.kitchen_cozy
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: more-info
+                    card_mod:
+                      style: >
+                        {% set active =
+                        is_state('input_boolean.kitchen_cozy','on') %} ha-card {
+                        border-radius: 14px; border: none; box-shadow: none;
+                        padding: 10px 2px !important; font-size: 12px;
+                        --paper-item-icon-color: {{ '#C9A227' if active else
+                        'var(--secondary-text-color)' }}; }
+                  - type: button
+                    name: Motion
+                    icon: mdi:motion-sensor-off
+                    entity: input_boolean.kitchen_motion_override
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: more-info
+                    card_mod:
+                      style: >
+                        {% set active =
+                        is_state('input_boolean.kitchen_motion_override','on')
+                        %} ha-card { border-radius: 14px; border: none;
+                        box-shadow: none; padding: 10px 2px !important;
+                        font-size: 12px; --paper-item-icon-color: {{ '#E50046'
+                        if active else 'var(--secondary-text-color)' }}; }
+              - type: custom:layout-card
+                layout_type: custom:grid-layout
+                layout:
+                  grid-template-columns: 3fr 1fr
+                  grid-template-areas: |
+                    "dining foyer"
+                  grid-column-gap: 8px
+                  padding: 0
+                  margin: 0
+                cards:
+                  - type: vertical-stack
+                    view_layout:
+                      grid-area: dining
+                    cards:
+                      - type: heading
+                        heading: Dining Room
+                        heading_style: subtitle
+                        tap_action:
+                          action: perform-action
+                          perform_action: light.turn_off
+                          target:
+                            entity_id:
+                              - light.dining_swirl_lamp
+                              - light.dining_sw
+                              - light.wled
+                        card_mod:
+                          style: >
+                            ha-card { background: transparent !important;
+                            border: none !important; box-shadow: none
+                            !important; } .subtitle { font-size: 13px
+                            !important; color: #ffffff !important; opacity: 1
+                            !important; font-weight: 700 !important;
+                            letter-spacing: 1px !important; text-transform:
+                            uppercase !important; }
+                      - type: grid
+                        columns: 3
+                        square: false
+                        cards:
+                          - type: button
+                            name: Swirl
+                            icon: mdi:lava-lamp
+                            entity: light.dining_swirl_lamp
+                            show_name: true
+                            show_icon: true
+                            icon_height: 24px
+                            tap_action:
+                              action: toggle
+                            hold_action:
+                              action: navigate
+                              navigation_path: '#light-dining-swirl'
+                            card_mod:
+                              style: >
+                                {% set active =
+                                is_state('light.dining_swirl_lamp','on') %}
+                                ha-card { border-radius: 14px; border: none;
+                                box-shadow: none; padding: 10px 2px !important;
+                                font-size: 12px; --paper-item-icon-color: {{
+                                '#8E44AD' if active else
+                                'var(--secondary-text-color)' }}; }
+                          - type: button
+                            name: Chandelier
+                            icon: mdi:chandelier
+                            entity: light.dining_sw
+                            show_name: true
+                            show_icon: true
+                            icon_height: 24px
+                            tap_action:
+                              action: toggle
+                            hold_action:
+                              action: navigate
+                              navigation_path: '#light-dining-chandelier'
+                            card_mod:
+                              style: >
+                                {% set active = is_state('light.dining_sw','on')
+                                %} ha-card { border-radius: 14px; border: none;
+                                box-shadow: none; padding: 10px 2px !important;
+                                font-size: 12px; --paper-item-icon-color: {{
+                                '#8E44AD' if active else
+                                'var(--secondary-text-color)' }}; }
+                          - type: button
+                            name: Cabinet
+                            icon: mdi:led-strip-variant
+                            entity: light.wled
+                            show_name: true
+                            show_icon: true
+                            icon_height: 24px
+                            tap_action:
+                              action: toggle
+                            hold_action:
+                              action: navigate
+                              navigation_path: '#light-dining-cabinet'
+                            card_mod:
+                              style: >
+                                {% set active = is_state('light.wled','on') %}
+                                ha-card { border-radius: 14px; border: none;
+                                box-shadow: none; padding: 10px 2px !important;
+                                font-size: 12px; --paper-item-icon-color: {{
+                                '#8E44AD' if active else
+                                'var(--secondary-text-color)' }}; }
+                          - type: button
+                            name: Candle
+                            icon: mdi:candle
+                            entity: switch.teckin_smart_plug_1_socket
+                            show_name: true
+                            show_icon: true
+                            icon_height: 24px
+                            tap_action:
+                              action: toggle
+                            hold_action:
+                              action: more-info
+                            card_mod:
+                              style: >
+                                {% set active =
+                                is_state('switch.teckin_smart_plug_1_socket','on')
+                                %} ha-card { border-radius: 14px; border: none;
+                                box-shadow: none; padding: 10px 2px !important;
+                                font-size: 12px; --paper-item-icon-color: {{
+                                '#8E44AD' if active else
+                                'var(--secondary-text-color)' }}; }
+                          - type: button
+                            name: Cozy
+                            icon: mdi:string-lights
+                            entity: input_boolean.dining_cozy
+                            show_name: true
+                            show_icon: true
+                            icon_height: 24px
+                            tap_action:
+                              action: toggle
+                            hold_action:
+                              action: more-info
+                            card_mod:
+                              style: >
+                                {% set active =
+                                is_state('input_boolean.dining_cozy','on') %}
+                                ha-card { border-radius: 14px; border: none;
+                                box-shadow: none; padding: 10px 2px !important;
+                                font-size: 12px; --paper-item-icon-color: {{
+                                '#8E44AD' if active else
+                                'var(--secondary-text-color)' }}; }
+                          - type: button
+                            name: Motion
+                            icon: mdi:motion-sensor-off
+                            entity: input_boolean.dining_room_motion_breaker
+                            show_name: true
+                            show_icon: true
+                            icon_height: 24px
+                            tap_action:
+                              action: toggle
+                            hold_action:
+                              action: more-info
+                            card_mod:
+                              style: >
+                                {% set active =
+                                is_state('input_boolean.dining_room_motion_breaker','on')
+                                %} ha-card { border-radius: 14px; border: none;
+                                box-shadow: none; padding: 10px 2px !important;
+                                font-size: 12px; --paper-item-icon-color: {{
+                                '#E50046' if active else
+                                'var(--secondary-text-color)' }}; }
+                  - type: vertical-stack
+                    view_layout:
+                      grid-area: foyer
+                    cards:
+                      - type: heading
+                        heading: Foyer
+                        heading_style: subtitle
+                        tap_action:
+                          action: perform-action
+                          perform_action: homeassistant.turn_off
+                          target:
+                            entity_id:
+                              - light.foyer_fan
+                              - fan.foyer_fan
+                        card_mod:
+                          style: >
+                            ha-card { background: transparent !important;
+                            border: none !important; box-shadow: none
+                            !important; } .subtitle { font-size: 13px
+                            !important; color: #ffffff !important; opacity: 1
+                            !important; font-weight: 700 !important;
+                            letter-spacing: 1px !important; text-transform:
+                            uppercase !important; }
+                      - type: grid
+                        columns: 1
+                        square: false
+                        cards:
+                          - type: button
+                            name: Light
+                            icon: mdi:ceiling-fan-light
+                            entity: light.foyer_fan
+                            show_name: true
+                            show_icon: true
+                            icon_height: 24px
+                            tap_action:
+                              action: toggle
+                            hold_action:
+                              action: navigate
+                              navigation_path: '#light-foyer'
+                            card_mod:
+                              style: >
+                                {% set active = is_state('light.foyer_fan','on')
+                                %} ha-card { border-radius: 14px; border: none;
+                                box-shadow: none; padding: 10px 2px !important;
+                                font-size: 12px; --paper-item-icon-color: {{
+                                '#3E7CB1' if active else
+                                'var(--secondary-text-color)' }}; }
+                          - type: button
+                            name: Fan
+                            icon: mdi:ceiling-fan
+                            entity: fan.foyer_fan
+                            show_name: true
+                            show_icon: true
+                            icon_height: 24px
+                            tap_action:
+                              action: toggle
+                            hold_action:
+                              action: navigate
+                              navigation_path: '#fan-foyer'
+                            card_mod:
+                              style: >
+                                {% set active = is_state('fan.foyer_fan','on')
+                                %} ha-card { border-radius: 14px; border: none;
+                                box-shadow: none; padding: 10px 2px !important;
+                                font-size: 12px; --paper-item-icon-color: {{
+                                '#3E7CB1' if active else
+                                'var(--secondary-text-color)' }}; }
+              - type: heading
+                heading: Living Room II
+                heading_style: subtitle
+                tap_action:
+                  action: perform-action
+                  perform_action: light.turn_off
+                  target:
+                    entity_id:
+                      - light.living_room_ii_sconse
+                      - light.living_room_ii_sw
+                card_mod:
+                  style: >
+                    ha-card { background: transparent !important; border: none
+                    !important; box-shadow: none !important; } .subtitle {
+                    font-size: 13px !important; color: #ffffff !important;
+                    opacity: 1 !important; font-weight: 700 !important;
+                    letter-spacing: 1px !important; text-transform: uppercase
+                    !important; }
+              - type: grid
+                columns: 4
+                square: false
+                cards:
+                  - type: button
+                    name: All
+                    icon: mdi:lightbulb-group
+                    entity: light.living_room_ii_lights
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: more-info
+                    card_mod:
+                      style: >
+                        {% set active =
+                        is_state('light.living_room_ii_lights','on') %} ha-card
+                        { border-radius: 14px; border: none; box-shadow: none;
+                        padding: 10px 2px !important; font-size: 12px;
+                        --paper-item-icon-color: {{ '#4FC3F7' if active else
+                        'var(--secondary-text-color)' }}; }
+                  - type: button
+                    name: Sconce
+                    icon: mdi:wall-sconce
+                    entity: light.living_room_ii_sconse
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: navigate
+                      navigation_path: '#light-living2-sconce'
+                    card_mod:
+                      style: >
+                        {% set active =
+                        is_state('light.living_room_ii_sconse','on') %} ha-card
+                        { border-radius: 14px; border: none; box-shadow: none;
+                        padding: 10px 2px !important; font-size: 12px;
+                        --paper-item-icon-color: {{ '#4FC3F7' if active else
+                        'var(--secondary-text-color)' }}; }
+                  - type: button
+                    name: Chandelier
+                    icon: mdi:chandelier
+                    entity: light.living_room_ii_sw
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: navigate
+                      navigation_path: '#light-living2-chandelier'
+                    card_mod:
+                      style: >
+                        {% set active = is_state('light.living_room_ii_sw','on')
+                        %} ha-card { border-radius: 14px; border: none;
+                        box-shadow: none; padding: 10px 2px !important;
+                        font-size: 12px; --paper-item-icon-color: {{ '#4FC3F7'
+                        if active else 'var(--secondary-text-color)' }}; }
+                  - type: button
+                    name: Motion
+                    icon: mdi:motion-sensor-off
+                    entity: input_boolean.living_room_ii_motion_override
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: more-info
+                    card_mod:
+                      style: >
+                        {% set active =
+                        is_state('input_boolean.living_room_ii_motion_override','on')
+                        %} ha-card { border-radius: 14px; border: none;
+                        box-shadow: none; padding: 10px 2px !important;
+                        font-size: 12px; --paper-item-icon-color: {{ '#E50046'
+                        if active else 'var(--secondary-text-color)' }}; }
+              - type: heading
+                heading: Living Room
+                heading_style: subtitle
+                tap_action:
+                  action: perform-action
+                  perform_action: light.turn_off
+                  target:
+                    entity_id:
+                      - light.living_room_floor_lamp
+                      - light.living_room_swirl_lamp
+                      - light.tv_backlight
+                      - light.sign_box
+                card_mod:
+                  style: >
+                    ha-card { background: transparent !important; border: none
+                    !important; box-shadow: none !important; } .subtitle {
+                    font-size: 13px !important; color: #ffffff !important;
+                    opacity: 1 !important; font-weight: 700 !important;
+                    letter-spacing: 1px !important; text-transform: uppercase
+                    !important; }
+              - type: grid
+                columns: 4
+                square: false
+                cards:
+                  - type: button
+                    name: Floor
+                    icon: mdi:floor-lamp
+                    entity: light.living_room_floor_lamp
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: navigate
+                      navigation_path: '#light-living-floor'
+                    card_mod:
+                      style: >
+                        {% set active =
+                        is_state('light.living_room_floor_lamp','on') %} ha-card
+                        { border-radius: 14px; border: none; box-shadow: none;
+                        padding: 10px 2px !important; font-size: 12px;
+                        --paper-item-icon-color: {{ '#EF6C4D' if active else
+                        'var(--secondary-text-color)' }}; }
+                  - type: button
+                    name: Swirl
+                    icon: mdi:lava-lamp
+                    entity: light.living_room_swirl_lamp
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: navigate
+                      navigation_path: '#light-living-swirl'
+                    card_mod:
+                      style: >
+                        {% set active =
+                        is_state('light.living_room_swirl_lamp','on') %} ha-card
+                        { border-radius: 14px; border: none; box-shadow: none;
+                        padding: 10px 2px !important; font-size: 12px;
+                        --paper-item-icon-color: {{ '#EF6C4D' if active else
+                        'var(--secondary-text-color)' }}; }
+                  - type: button
+                    name: Backlight
+                    icon: mdi:led-strip-variant
+                    entity: light.tv_backlight
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: navigate
+                      navigation_path: '#light-living-tvbacklight'
+                    card_mod:
+                      style: >
+                        {% set active = is_state('light.tv_backlight','on') %}
+                        ha-card { border-radius: 14px; border: none; box-shadow:
+                        none; padding: 10px 2px !important; font-size: 12px;
+                        --paper-item-icon-color: {{ '#EF6C4D' if active else
+                        'var(--secondary-text-color)' }}; }
+                  - type: button
+                    name: Sign
+                    icon: phu:nanoleaf-expo-display
+                    entity: light.sign_box
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: navigate
+                      navigation_path: '#light-living-sign'
+                    card_mod:
+                      style: >
+                        {% set active = is_state('light.sign_box','on') %}
+                        ha-card { border-radius: 14px; border: none; box-shadow:
+                        none; padding: 10px 2px !important; font-size: 12px;
+                        --paper-item-icon-color: {{ '#EF6C4D' if active else
+                        'var(--secondary-text-color)' }}; }
+                  - type: button
+                    name: Blinds
+                    icon: mdi:blinds-horizontal
+                    entity: cover.smartwave_window_covering
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: navigate
+                      navigation_path: '#cover-living-blinds'
+                    card_mod:
+                      style: >
+                        {% set active =
+                        is_state('cover.smartwave_window_covering','open') %}
+                        ha-card { border-radius: 14px; border: none; box-shadow:
+                        none; padding: 10px 2px !important; font-size: 12px;
+                        --paper-item-icon-color: {{ '#EF6C4D' if active else
+                        'var(--secondary-text-color)' }}; }
+                  - type: button
+                    name: TV
+                    icon: mdi:television
+                    entity: media_player.living_room_tv
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: more-info
+                    card_mod:
+                      style: >
+                        {% set active = states('media_player.living_room_tv')
+                        not in ['off','standby','unavailable','unknown'] %}
+                        ha-card { border-radius: 14px; border: none; box-shadow:
+                        none; padding: 10px 2px !important; font-size: 12px;
+                        --paper-item-icon-color: {{ '#EF6C4D' if active else
+                        'var(--secondary-text-color)' }}; }
+                  - type: button
+                    name: Cozy
+                    icon: mdi:string-lights
+                    entity: input_boolean.living_room_cozy_boolean
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: more-info
+                    card_mod:
+                      style: >
+                        {% set active =
+                        is_state('input_boolean.living_room_cozy_boolean','on')
+                        %} ha-card { border-radius: 14px; border: none;
+                        box-shadow: none; padding: 10px 2px !important;
+                        font-size: 12px; --paper-item-icon-color: {{ '#EF6C4D'
+                        if active else 'var(--secondary-text-color)' }}; }
+                  - type: button
+                    name: Motion
+                    icon: mdi:motion-sensor-off
+                    entity: input_boolean.living_room_motion_override
+                    show_name: true
+                    show_icon: true
+                    icon_height: 24px
+                    tap_action:
+                      action: toggle
+                    hold_action:
+                      action: more-info
+                    card_mod:
+                      style: >
+                        {% set active =
+                        is_state('input_boolean.living_room_motion_override','on')
+                        %} ha-card { border-radius: 14px; border: none;
+                        box-shadow: none; padding: 10px 2px !important;
+                        font-size: 12px; --paper-item-icon-color: {{ '#E50046'
+                        if active else 'var(--secondary-text-color)' }}; }
+            view_layout:
+              grid-area: rooms
+          - type: vertical-stack
+            cards:
+              - type: heading
+                heading: Music
+                heading_style: subtitle
+                card_mod:
+                  style: >
+                    ha-card { background: transparent !important; border: none
+                    !important; box-shadow: none !important; } .subtitle {
+                    font-size: 13px !important; color: #ffffff !important;
+                    opacity: 1 !important; font-weight: 700 !important;
+                    letter-spacing: 1px !important; text-transform: uppercase
+                    !important; }
+              - type: custom:yet-another-media-player
+                entities:
+                  - entity_id: media_player.kitchen_nest_speaker_ma
+                    name: Kitchen
+                  - entity_id: media_player.downstairs_speakers_2
+                    name: Downstairs
+                  - entity_id: media_player.whole_house_ma
+                    name: House
+                  - entity_id: media_player.dining_room_speaker_ma
+                    name: Dining Room
+                  - entity_id: media_player.living_room_ii_speaker_ma
+                    name: Living Room II
+                  - entity_id: media_player.living_room_display_ma
+                    name: Living Room
+                  - entity_id: media_player.main_bathroom_speaker_ma
+                    name: Bathroom
+                volume_mode: slider
+                match_theme: true
+                collapse_on_idle: true
+                always_collapsed: false
+                alternate_progress_bar: true
+                hold_to_pin: true
+                control_layout: modern
+                display_timestamps: false
+                idle_screen: default
+                card_type: default
+                dim_chips_on_idle: true
+                progress_bar_height: 6
+                search_view: list
+                details_alignment: center
+                hide_menu_player: false
+                expand_on_search: false
+                artwork_position: center center
+                hide_collapsed_artwork: false
+                extend_artwork: false
+                show_chip_row: auto
+                disable_autofocus: true
+                dismiss_search_on_play: true
+                always_show_lyrics: false
+                card_mod:
+                  style: >
+                    ha-card { background: none; box-shadow: none; border: none;
+                    }
+              - type: custom:layout-card
+                layout_type: custom:grid-layout
+                layout:
+                  grid-template-columns: auto 1fr
+                  grid-template-areas: |
+                    "title status"
+                  align-items: center
+                  grid-gap: 6px
+                  padding: 0
+                  margin: 0
+                cards:
+                  - type: heading
+                    heading: Cameras
+                    heading_style: subtitle
+                    view_layout:
+                      grid-area: title
+                    card_mod:
+                      style: >
+                        ha-card { background: transparent !important; border:
+                        none !important; box-shadow: none !important; }
+                        .subtitle { font-size: 13px !important; color: #ffffff
+                        !important; opacity: 1 !important; font-weight: 700
+                        !important; letter-spacing: 1px !important;
+                        text-transform: uppercase !important; }
+                  - type: custom:mushroom-chips-card
+                    alignment: end
+                    view_layout:
+                      grid-area: status
+                    chips:
+                      - type: template
+                        entity: binary_sensor.all_cameras_human_occupancy
+                        icon: >-
+                          {{ 'mdi:account-alert' if
+                          ['binary_sensor.doorbell_person_occupancy','binary_sensor.front_door_bell_person','binary_sensor.frontyard_person_occupancy','binary_sensor.front_view_person','binary_sensor.westyard_person_occupancy','binary_sensor.west_yard_person','binary_sensor.backyard_person_occupancy','binary_sensor.back_yard_person','binary_sensor.basement_person']
+                          | select('is_state','on') | list | count > 0 else
+                          'mdi:cctv' }}
+                        icon_color: >-
+                          {{ 'red' if
+                          ['binary_sensor.doorbell_person_occupancy','binary_sensor.front_door_bell_person','binary_sensor.frontyard_person_occupancy','binary_sensor.front_view_person','binary_sensor.westyard_person_occupancy','binary_sensor.west_yard_person','binary_sensor.backyard_person_occupancy','binary_sensor.back_yard_person','binary_sensor.basement_person']
+                          | select('is_state','on') | list | count > 0 else
+                          'grey' }}
+                        content: >-
+                          {% set ns = namespace(l=[]) %} {% if
+                          is_state('binary_sensor.doorbell_person_occupancy','on')
+                          or
+                          is_state('binary_sensor.front_door_bell_person','on')
+                          %}{% set ns.l = ns.l + ['Front Door'] %}{% endif %} {%
+                          if
+                          is_state('binary_sensor.frontyard_person_occupancy','on')
+                          or is_state('binary_sensor.front_view_person','on')
+                          %}{% set ns.l = ns.l + ['Front Yard'] %}{% endif %} {%
+                          if
+                          is_state('binary_sensor.westyard_person_occupancy','on')
+                          or is_state('binary_sensor.west_yard_person','on')
+                          %}{% set ns.l = ns.l + ['West Yard'] %}{% endif %} {%
+                          if
+                          is_state('binary_sensor.backyard_person_occupancy','on')
+                          or is_state('binary_sensor.back_yard_person','on')
+                          %}{% set ns.l = ns.l + ['Back Yard'] %}{% endif %} {%
+                          if is_state('binary_sensor.basement_person','on') %}{%
+                          set ns.l = ns.l + ['Basement'] %}{% endif %} {{ 'No
+                          Person' if ns.l | length == 0 else 'Person @ ' ~ (ns.l
+                          | join(' & ')) }}
+                        tap_action:
+                          action: more-info
+                    card_mod:
+                      style: |
+                        ha-card {
+                          background: none;
+                          box-shadow: none;
+                          border: none;
+                          --chip-background: transparent;
+                          --chip-box-shadow: none;
+                          --chip-border-width: 0;
+                          --chip-height: 28px;
+                          --chip-padding: 0 4px;
+                          --chip-font-size: 12px;
+                          --chip-font-weight: 600;
+                          --chip-icon-size: 16px;
+                        }
+              - type: horizontal-stack
+                cards:
+                  - type: picture-entity
+                    entity: camera.front_door_bell_clear
+                    name: Doorbell
+                    camera_view: auto
+                    show_state: false
+                    show_name: false
+                    tap_action:
+                      action: more-info
+                    card_mod:
+                      style: |
+                        ha-card { border-radius: 14px; box-shadow: none; }
+                  - type: picture-entity
+                    entity: camera.front_view_clear_lens_0
+                    name: Front View
+                    camera_view: auto
+                    show_state: false
+                    show_name: false
+                    tap_action:
+                      action: more-info
+                    card_mod:
+                      style: |
+                        ha-card { border-radius: 14px; box-shadow: none; }
+                  - type: picture-entity
+                    entity: camera.back_yard_clear
+                    name: Back Yard
+                    camera_view: auto
+                    show_state: false
+                    show_name: false
+                    tap_action:
+                      action: more-info
+                    card_mod:
+                      style: |
+                        ha-card { border-radius: 14px; box-shadow: none; }
+              - type: horizontal-stack
+                cards:
+                  - type: picture-entity
+                    entity: camera.west_yard_clear
+                    name: West Yard
+                    camera_view: auto
+                    show_state: false
+                    show_name: false
+                    tap_action:
+                      action: more-info
+                    card_mod:
+                      style: |
+                        ha-card { border-radius: 14px; box-shadow: none; }
+                  - type: picture-entity
+                    entity: camera.basement_clear
+                    name: Basement
+                    camera_view: auto
+                    show_state: false
+                    show_name: false
+                    tap_action:
+                      action: more-info
+                    card_mod:
+                      style: |
+                        ha-card { border-radius: 14px; box-shadow: none; }
+              - type: custom:mushroom-chips-card
+                alignment: end
+                chips:
+                  - type: conditional
+                    conditions:
+                      - entity: binary_sensor.richards_mach_e_mach_e_home_charging
+                        state: 'on'
+                    chip:
+                      type: template
+                      entity: sensor.carvin_elvehchargingpower
+                      icon: mdi:ev-station
+                      icon_color: green
+                      content: >-
+                        Charging · {{
+                        states('sensor.carvin_elvehchargingpower')
+                        | float(0) | round(1) }} kW
+                      tap_action:
+                        action: more-info
+                  - type: conditional
+                    conditions:
+                      - condition: numeric_state
+                        entity: sensor.droplet_flow_rate
+                        above: 0
+                    chip:
+                      type: template
+                      entity: sensor.droplet_flow_rate
+                      icon: mdi:water-pump
+                      icon_color: blue
+                      content: >-
+                        Flowing {{ states('sensor.droplet_flow_rate') | float(0)
+                        | round(2) }} {{
+                        state_attr('sensor.droplet_flow_rate','unit_of_measurement')
+                        or '' }}
+                      tap_action:
+                        action: more-info
+                  - type: template
+                    entity: sensor.daily_water_usage
+                    icon: mdi:water
+                    icon_color: >-
+                      {{ 'blue' if states('sensor.droplet_flow_rate') | float(0)
+                      > 0 else 'grey' }}
+                    content: >-
+                      {% set u = states('sensor.daily_water_usage') | float(0) |
+                      round(0) | int %} {{ u }} {{ 'Gallons' if u > 1 else
+                      'Gallon' }} Today
+                    tap_action:
+                      action: navigate
+                      navigation_path: '#water'
+                card_mod:
+                  style: |
+                    ha-card {
+                      background: none;
+                      box-shadow: none;
+                      border: none;
+                      --chip-background: transparent;
+                      --chip-box-shadow: none;
+                      --chip-border-width: 0;
+                      --chip-height: 28px;
+                      --chip-padding: 0 4px;
+                      --chip-font-size: 12px;
+                      --chip-font-weight: 600;
+                      --chip-icon-size: 16px;
+                    }
+            view_layout:
+              grid-area: media
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#light-kitchen-recess'
+        name: Kitchen Recess
+        icon: mdi:light-recessed
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: custom:mushroom-light-card
+            entity: light.kitchen_sink_sw
+            name: ''
+            use_light_color: false
+            show_brightness_control: true
+            show_color_temp_control: false
+            show_color_control: false
+            collapsible_controls: true
+            tap_action:
+              action: toggle
+            grid_options:
+              columns: full
+              rows: 2
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#light-kitchen-lamp'
+        name: Kitchen Lamp
+        icon: mdi:lamp-outline
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: custom:mushroom-light-card
+            entity: light.kitchen_lamp
+            name: ''
+            use_light_color: true
+            show_brightness_control: true
+            show_color_temp_control: true
+            show_color_control: true
+            collapsible_controls: true
+            tap_action:
+              action: toggle
+            grid_options:
+              columns: full
+              rows: 2
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#light-kitchen-top'
+        name: Kitchen Top LED
+        icon: mdi:led-strip
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: custom:mushroom-light-card
+            entity: light.kitchen_cabinet
+            name: ''
+            use_light_color: true
+            show_brightness_control: true
+            show_color_temp_control: false
+            show_color_control: false
+            collapsible_controls: true
+            tap_action:
+              action: toggle
+            grid_options:
+              columns: full
+              rows: 2
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#light-kitchen-bottom'
+        name: Kitchen Bottom LED
+        icon: mdi:led-strip-variant
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: custom:mushroom-light-card
+            entity: light.kitchen_cabinet_segment_1
+            name: ''
+            use_light_color: true
+            show_brightness_control: true
+            show_color_temp_control: false
+            show_color_control: false
+            collapsible_controls: true
+            tap_action:
+              action: toggle
+            grid_options:
+              columns: full
+              rows: 2
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#light-dining-swirl'
+        name: Dining Swirl
+        icon: mdi:lava-lamp
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: custom:mushroom-light-card
+            entity: light.dining_swirl_lamp
+            name: ''
+            use_light_color: true
+            show_brightness_control: true
+            show_color_temp_control: true
+            show_color_control: true
+            collapsible_controls: true
+            tap_action:
+              action: toggle
+            grid_options:
+              columns: full
+              rows: 2
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#light-dining-chandelier'
+        name: Dining Chandelier
+        icon: mdi:chandelier
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: custom:mushroom-light-card
+            entity: light.dining_sw
+            name: ''
+            use_light_color: true
+            show_brightness_control: true
+            show_color_temp_control: false
+            show_color_control: false
+            collapsible_controls: true
+            tap_action:
+              action: toggle
+            grid_options:
+              columns: full
+              rows: 2
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#light-dining-cabinet'
+        name: Dining Cabinet LED
+        icon: mdi:led-strip-variant
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: custom:mushroom-light-card
+            entity: light.wled
+            name: ''
+            use_light_color: true
+            show_brightness_control: true
+            show_color_temp_control: false
+            show_color_control: true
+            collapsible_controls: true
+            tap_action:
+              action: toggle
+            grid_options:
+              columns: full
+              rows: 2
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#light-foyer'
+        name: Foyer Light
+        icon: mdi:ceiling-fan-light
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: custom:mushroom-light-card
+            entity: light.foyer_fan
+            name: ''
+            use_light_color: true
+            show_brightness_control: true
+            show_color_temp_control: true
+            show_color_control: true
+            collapsible_controls: true
+            tap_action:
+              action: toggle
+            grid_options:
+              columns: full
+              rows: 2
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#fan-foyer'
+        name: Foyer Fan
+        icon: mdi:ceiling-fan
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: custom:mushroom-fan-card
+            entity: fan.foyer_fan
+            name: ''
+            icon_animation: true
+            show_percentage_control: true
+            show_oscillate_control: false
+            show_direction_control: true
+            collapsible_controls: true
+            tap_action:
+              action: toggle
+            grid_options:
+              columns: full
+              rows: 2
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#light-living2-sconce'
+        name: Living Room II Sconce
+        icon: mdi:wall-sconce
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: custom:mushroom-light-card
+            entity: light.living_room_ii_sconse
+            name: ''
+            use_light_color: true
+            show_brightness_control: true
+            show_color_temp_control: true
+            show_color_control: true
+            collapsible_controls: true
+            tap_action:
+              action: toggle
+            grid_options:
+              columns: full
+              rows: 2
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#light-living2-chandelier'
+        name: Living Room II Chandelier
+        icon: mdi:chandelier
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: custom:mushroom-light-card
+            entity: light.living_room_ii_sw
+            name: ''
+            use_light_color: true
+            show_brightness_control: true
+            show_color_temp_control: false
+            show_color_control: false
+            collapsible_controls: true
+            tap_action:
+              action: toggle
+            grid_options:
+              columns: full
+              rows: 2
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#light-living-floor'
+        name: Living Room Floor Lamp
+        icon: mdi:floor-lamp
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: custom:mushroom-light-card
+            entity: light.living_room_floor_lamp
+            name: ''
+            use_light_color: true
+            show_brightness_control: true
+            show_color_temp_control: true
+            show_color_control: true
+            collapsible_controls: true
+            tap_action:
+              action: toggle
+            grid_options:
+              columns: full
+              rows: 2
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#light-living-swirl'
+        name: Living Room Swirl
+        icon: mdi:lava-lamp
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: custom:mushroom-light-card
+            entity: light.living_room_swirl_lamp
+            name: ''
+            use_light_color: true
+            show_brightness_control: true
+            show_color_temp_control: true
+            show_color_control: true
+            collapsible_controls: true
+            tap_action:
+              action: toggle
+            grid_options:
+              columns: full
+              rows: 2
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#light-living-tvbacklight'
+        name: TV Backlight
+        icon: mdi:led-strip-variant
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: custom:mushroom-light-card
+            entity: light.tv_backlight
+            name: ''
+            use_light_color: true
+            show_brightness_control: true
+            show_color_temp_control: true
+            show_color_control: true
+            collapsible_controls: true
+            tap_action:
+              action: toggle
+            grid_options:
+              columns: full
+              rows: 2
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#light-living-sign'
+        name: Sign
+        icon: phu:nanoleaf-expo-display
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: custom:mushroom-light-card
+            entity: light.sign_box
+            name: ''
+            use_light_color: true
+            show_brightness_control: true
+            show_color_temp_control: true
+            show_color_control: true
+            collapsible_controls: true
+            tap_action:
+              action: toggle
+            grid_options:
+              columns: full
+              rows: 2
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#cover-living-blinds'
+        name: Living Room Blinds
+        icon: mdi:blinds-horizontal
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: custom:mushroom-cover-card
+            entity: cover.smartwave_window_covering
+            name: ''
+            show_position_control: true
+            show_buttons_control: true
+            show_tilt_position_control: false
+            grid_options:
+              columns: full
+              rows: 2
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#light-bath-mirror'
+        name: Bathroom Mirror
+        icon: mdi:wall-sconce
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: custom:mushroom-light-card
+            entity: light.main_bathroom_lights
+            name: ''
+            use_light_color: true
+            show_brightness_control: true
+            show_color_temp_control: true
+            show_color_control: true
+            collapsible_controls: true
+            tap_action:
+              action: toggle
+            grid_options:
+              columns: full
+              rows: 2
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#light-bath-lamp'
+        name: Bathroom Lamp
+        icon: mdi:lamp
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: custom:mushroom-light-card
+            entity: light.master_bathroom_lamp
+            name: ''
+            use_light_color: true
+            show_brightness_control: true
+            show_color_temp_control: true
+            show_color_control: true
+            collapsible_controls: true
+            tap_action:
+              action: toggle
+            grid_options:
+              columns: full
+              rows: 2
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#light-outdoor-porch'
+        name: Front Porch
+        icon: mdi:outdoor-lamp
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: custom:mushroom-light-card
+            entity: light.front_porch
+            name: ''
+            use_light_color: true
+            show_brightness_control: true
+            show_color_temp_control: true
+            show_color_control: true
+            collapsible_controls: true
+            tap_action:
+              action: toggle
+            grid_options:
+              columns: full
+              rows: 2
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#light-outdoor-patio'
+        name: Patio Lights
+        icon: mdi:coach-lamp
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: custom:mushroom-light-card
+            entity: light.patio
+            name: ''
+            use_light_color: true
+            show_brightness_control: true
+            show_color_temp_control: true
+            show_color_control: true
+            collapsible_controls: true
+            tap_action:
+              action: toggle
+            grid_options:
+              columns: full
+              rows: 2
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#climate-downstairs'
+        name: Downstairs Climate
+        icon: mdi:home-thermometer-outline
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: thermostat
+            entity: climate.my_ecobee
+            show_current_as_primary: false
+            features:
+              - type: climate-hvac-modes
+              - type: climate-fan-modes
+                style: dropdown
+            name: ''
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#climate-upstairs'
+        name: Upstairs Climate
+        icon: mdi:air-conditioner
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: thermostat
+            entity: climate.master_bedroom
+            show_current_as_primary: false
+            features:
+              - type: climate-hvac-modes
+              - type: climate-fan-modes
+                style: dropdown
+            name: ''
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#shopping'
+        name: Shopping List
+        icon: mdi:cart-variant
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: todo-list
+            entity: todo.shopping_list
+            display_order: none
+            hide_completed: true
+            hide_create: false
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#outdoor'
+        name: Outdoor Lights
+        icon: mdi:outdoor-lamp
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: heading
+            heading: Lights  ·  tap to turn all off
+            heading_style: subtitle
             tap_action:
               action: perform-action
-              perform_action: light.toggle
+              perform_action: light.turn_off
               target:
-                entity_id: light.all_lights
-              data:
-                color_temp_kelvin: 6500
-                brightness_pct: 100
-            hold_action:
-              action: none
-            double_tap_action:
-              action: more-info
+                entity_id:
+                  - light.front_porch
+                  - light.patio
+                  - light.front_view_floodlight
+                  - light.west_yard_floodlight
+                  - light.back_yard_floodlight
             card_mod:
-              style: |
-                ha-card {
-                  background: rgba(255, 255, 255, 0.05);
-                  backdrop-filter: blur(4px);
-                  -webkit-backdrop-filter: blur(4px);
-                  border-radius: 10px;
-                  border: none;
-                }
-          - type: custom:mushroom-template-card
-            primary: Shopping
-            secondary: |-
-              {% if states('todo.shopping_list') | int == 1 %}
-                1 item needed
-              {% else %}
-                {{ states('todo.shopping_list') | int }} Items Needed
-              {% endif %}
-            icon: mdi:cart-variant
-            icon_color: |-
-              {% if states('todo.shopping_list') | int > 0 %}
-                  #FFB200
-                {% else %}
-                  white
-                {% endif %}
-            layout: horizontal
-            tap_action:
-              action: navigate
-              navigation_path: '#shopping'
-            hold_action:
-              action: none
-            double_tap_action:
-              action: none
-            card_mod:
-              style: |
-                ha-card {
-                  background: rgba(255, 255, 255, 0.05);
-                  backdrop-filter: blur(4px);
-                  -webkit-backdrop-filter: blur(4px);
-                  border-radius: 10px;
-                  border: none;
-                }
-          - type: custom:mushroom-template-card
-            primary: Temperature
-            secondary: '{{ states(''sensor.livingroom_temperature_temperature'') }}°F"'
-            icon: mdi:home-thermometer-outline
-            icon_color: >
-              {% if states('sensor.livingroom_temperature_temperature') | int <
-              65 %}
-                #FFF0BD
-              {% elif states('sensor.livingroom_temperature_temperature') | int
-              >= 65 and states('sensor.livingroom_temperature_temperature') |
-              int <= 78 %}
-                #4DA1A9
-              {% else %}
-                #E50046
-              {% endif %}
-            layout: horizontal
-            tap_action:
-              action: none
-            hold_action:
-              action: none
-            double_tap_action:
-              action: none
-            card_mod:
-              style: |
-                ha-card {
-                  background: rgba(255, 255, 255, 0.05);
-                  backdrop-filter: blur(4px);
-                  -webkit-backdrop-filter: blur(4px);
-                  border-radius: 10px;
-                  border: none;
-                }
-          - type: custom:mushroom-template-card
-            primary: Anniversary
-            secondary: '{{ states(''sensor.wedding_anniversary'') }} Days'
-            icon: mdi:ring
-            icon_color: red
-            layout: horizontal
-            tap_action:
-              action: navigate
-              navigation_path: ''
-            hold_action:
-              action: none
-            double_tap_action:
-              action: none
-            badge_icon: |-
-              {% if states('sensor.wedding_anniversary') >= 20 %}
-                mdi:clock
-              {% else %}
-                null
-              {% endif %}
-            badge_color: |-
-              {% if states('sensor.wedding_anniversary') >= 20 %}
-                red
-              {% else %}
-                null
-              {% endif %}
-            card_mod:
-              style: |
-                ha-card {
-                  background: rgba(255, 255, 255, 0.05);
-                  backdrop-filter: blur(4px);
-                  -webkit-backdrop-filter: blur(4px);
-                  border-radius: 10px;
-                  border: none;
-                }
-          - type: custom:mushroom-person-card
-            entity: person.richard
-            tap_action:
-              action: none
-            hold_action:
-              action: none
-            double_tap_action:
-              action: none
-            icon_type: entity-picture
-            card_mod:
-              style: |
-                ha-card {
-                  background: rgba(255, 255, 255, 0.05);
-                  backdrop-filter: blur(4px);
-                  -webkit-backdrop-filter: blur(4px);
-                  border-radius: 10px;
-                  border: none;
-                }
-          - type: custom:mushroom-person-card
-            entity: person.megan
-            layout: horizontal
-            fill_container: false
-            tap_action:
-              action: none
-            hold_action:
-              action: none
-            double_tap_action:
-              action: none
-            icon_type: entity-picture
-            card_mod:
-              style: |
-                ha-card {
-                  background: rgba(255, 255, 255, 0.05);
-                  backdrop-filter: blur(4px);
-                  -webkit-backdrop-filter: blur(4px);
-                  border-radius: 10px;
-                  border: none;
-                }
-        view_layout:
-          grid-area: topbar
-      - type: vertical-stack
+              style: >
+                ha-card { background: transparent !important; border: none
+                !important; box-shadow: none !important; } .subtitle {
+                font-size: 13px !important; color: #ffffff !important; opacity:
+                1 !important; font-weight: 700 !important; letter-spacing: 1px
+                !important; text-transform: uppercase !important; }
+          - type: grid
+            columns: 5
+            square: false
+            cards:
+              - type: button
+                name: Porch
+                icon: mdi:outdoor-lamp
+                entity: light.front_porch
+                show_name: true
+                show_icon: true
+                icon_height: 24px
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: navigate
+                  navigation_path: '#light-outdoor-porch'
+                card_mod:
+                  style: >
+                    {% set active = is_state('light.front_porch','on') %}
+                    ha-card { border-radius: 14px; border: none; box-shadow:
+                    none; padding: 10px 2px !important; font-size: 12px;
+                    --paper-item-icon-color: {{ '#78909C' if active else
+                    'var(--secondary-text-color)' }}; }
+              - type: button
+                name: Patio
+                icon: mdi:coach-lamp
+                entity: light.patio
+                show_name: true
+                show_icon: true
+                icon_height: 24px
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: navigate
+                  navigation_path: '#light-outdoor-patio'
+                card_mod:
+                  style: >
+                    {% set active = is_state('light.patio','on') %} ha-card {
+                    border-radius: 14px; border: none; box-shadow: none;
+                    padding: 10px 2px !important; font-size: 12px;
+                    --paper-item-icon-color: {{ '#78909C' if active else
+                    'var(--secondary-text-color)' }}; }
+              - type: button
+                name: Front Flood
+                icon: mdi:light-flood-down
+                entity: light.front_view_floodlight
+                show_name: true
+                show_icon: true
+                icon_height: 24px
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                card_mod:
+                  style: >
+                    {% set active = is_state('light.front_view_floodlight','on')
+                    %} ha-card { border-radius: 14px; border: none; box-shadow:
+                    none; padding: 10px 2px !important; font-size: 12px;
+                    --paper-item-icon-color: {{ '#78909C' if active else
+                    'var(--secondary-text-color)' }}; }
+              - type: button
+                name: West Flood
+                icon: mdi:light-flood-down
+                entity: light.west_yard_floodlight
+                show_name: true
+                show_icon: true
+                icon_height: 24px
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                card_mod:
+                  style: >
+                    {% set active = is_state('light.west_yard_floodlight','on')
+                    %} ha-card { border-radius: 14px; border: none; box-shadow:
+                    none; padding: 10px 2px !important; font-size: 12px;
+                    --paper-item-icon-color: {{ '#78909C' if active else
+                    'var(--secondary-text-color)' }}; }
+              - type: button
+                name: Back Flood
+                icon: mdi:light-flood-down
+                entity: light.back_yard_floodlight
+                show_name: true
+                show_icon: true
+                icon_height: 24px
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                card_mod:
+                  style: >
+                    {% set active = is_state('light.back_yard_floodlight','on')
+                    %} ha-card { border-radius: 14px; border: none; box-shadow:
+                    none; padding: 10px 2px !important; font-size: 12px;
+                    --paper-item-icon-color: {{ '#78909C' if active else
+                    'var(--secondary-text-color)' }}; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#calendar'
+        name: Calendar
+        icon: mdi:calendar
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
         cards:
-          - type: markdown
-            content: '{{ states(''input_text.dashboard_output'')}}'
-            card_mod:
-              style: |
-                ha-card {
-                  background: rgba(255, 255, 255, 0.05);
-                  backdrop-filter: blur(7px);
-                  -webkit-backdrop-filter: blur(7px);
-                  border-radius: 10px;
-                  border: none;
-                  font-size: 15px;
-                  font-weight: 300;
-                }
-                  ha-markdown {
-                text-align: center;
-                display: flex;
-                justify-content: center; }
-          - type: markdown
-            content: '{{ states(''sensor.time'') }}'
-            card_mod:
-              style: |
-                ha-card {
-                  background: rgba(255, 255, 255, 0.05);
-                  backdrop-filter: blur(4px);
-                  -webkit-backdrop-filter: blur(4px);
-                  border-radius: 10px;
-                  border: none;
-                  font-size: 30px;
-                  font-weight: 400;
-                }
-                ha-markdown {
-                text-align: center;
-                display: flex;
-                justify-content: center; }
-          - entities:
+          - type: custom:calendar-card-pro
+            entities:
               - entity: calendar.richard
                 color: '#C62300'
                 label: Richard |
                 accent_color: '#C62300'
-              - entity: calendar.chelsea
+              - entity: calendar.birthdays
                 color: '#0B2F9F'
+                label: Birthdays |
                 accent_color: '#0B2F9F'
-              - entity: calendar.ghana
-                color: '#2a7e19'
-                accent_color: '#2a7e19'
-              - entity: calendar.christian_holidays
-                color: '#d4b02c'
-                accent_color: '#d4b02c'
-              - entity: calendar.movie_release
-                color: '#118B50'
-                accent_color: '#118B50'
-              - entity: calendar.megan
-                color: '#DE3163'
-                label: Megan |
-                accent_color: '#DE3163'
-            days_to_show: 6
-            compact_days_to_show: ''
-            compact_events_to_show: 7
-            show_empty_days: true
+            days_to_show: 7
+            compact_events_to_show: 5
             filter_duplicates: true
-            title: Family Calendar
-            title_font_size: ''
-            background_color: ''
             today_indicator: pulse
-            date_vertical_alignment: top
             weekend_weekday_color: '#C62E2E'
             weekend_day_color: '#C62E2E'
             weekend_month_color: '#C62E2E'
             today_weekday_color: '#03a9f4'
             today_day_color: '#03a9f4'
             today_month_color: '#03a9f4'
-            show_past_events: true
-            show_countdown: true
-            event_font_size: 16px
+            event_font_size: 13px
             empty_day_color: var(--secondary-text-color)
             time_24h: false
+            location_font_size: 11px
             weather:
-              position: date
+              position: event
               date:
                 show_conditions: true
                 show_high_temp: true
@@ -285,657 +2412,681 @@ views:
                 icon_size: 14px
                 font_size: 12px
                 color: var(--primary-text-color)
-              entity: weather.forecast_home
+              entity: weather.home
             tap_action:
               action: expand
-            type: custom:calendar-card-pro
             card_mod:
               style: |
-                :host {
-                  --calendar-card-background: rgba(255, 255, 255, 0.05) !important;
-                  backdrop-filter: blur(7px);
-                  -webkit-backdrop-filter: blur(7px);
-                  border-radius: 12px;
-                }
-
-                ha-card {
-                  background: rgba(255, 255, 255, 0.05) !important;
-                  backdrop-filter: blur(7px);
-                  -webkit-backdrop-filter: blur(7px);
-                  border-radius: 12px;
-                  border: none;
-                }
-        view_layout:
-          grid-area: calendar
-      - type: horizontal-stack
-        cards:
-          - type: custom:mushroom-template-card
-            primary: TIMERS
-            icon: mdi:timer
-            layout: horizontal
-            tap_action:
-              action: navigate
-              navigation_path: '#timer'
-            hold_action:
-              action: none
-            double_tap_action:
-              action: none
-            secondary: ''
-            icon_color: White
+                ha-card { background: none; box-shadow: none; border: none; }
+          - type: heading
+            heading: Trash
+            heading_style: subtitle
             card_mod:
-              style: |
-                ha-card {
-                  background: rgba(255, 255, 255, 0.05);
-                  backdrop-filter: blur(4px);
-                  -webkit-backdrop-filter: blur(4px);
-                  border-radius: 10px;
-                  border: none;
-                }
-          - type: custom:mushroom-template-card
-            icon: mdi:hamburger
-            layout: horizontal
-            tap_action:
-              action: navigate
-              navigation_path: '#Timers'
-            hold_action:
-              action: none
-            double_tap_action:
-              action: none
-            secondary: ''
-            icon_color: White
-            primary: RECIPES
-            card_mod:
-              style: |
-                ha-card {
-                  background: rgba(255, 255, 255, 0.05);
-                  backdrop-filter: blur(4px);
-                  -webkit-backdrop-filter: blur(4px);
-                  border-radius: 10px;
-                  border: none;
-                }
-          - type: custom:mushroom-template-card
-            icon: mdi:vacuum
-            layout: horizontal
-            tap_action:
-              action: navigate
-              navigation_path: '#cleaning'
-            hold_action:
-              action: none
-            double_tap_action:
-              action: none
-            secondary: ''
-            icon_color: White
-            primary: CLEANING
-            card_mod:
-              style: |
-                ha-card {
-                  background: rgba(255, 255, 255, 0.05);
-                  backdrop-filter: blur(4px);
-                  -webkit-backdrop-filter: blur(4px);
-                  border-radius: 10px;
-                  border: none;
-                }
-          - type: custom:mushroom-template-card
-            icon: mdi:string-lights
-            layout: horizontal
-            tap_action:
-              action: navigate
-              navigation_path: '#light'
-            hold_action:
-              action: none
-            double_tap_action:
-              action: none
-            secondary: ''
-            icon_color: White
-            primary: LIGHTS
-            card_mod:
-              style: |
-                ha-card {
-                  background: rgba(255, 255, 255, 0.05);
-                  backdrop-filter: blur(4px);
-                  -webkit-backdrop-filter: blur(4px);
-                  border-radius: 10px;
-                  border: none;
-                }
-          - type: custom:mushroom-template-card
-            icon: mdi:music
-            layout: horizontal
-            tap_action:
-              action: navigate
-              navigation_path: '#music'
-            hold_action:
-              action: none
-            double_tap_action:
-              action: none
-            secondary: ''
-            icon_color: White
-            primary: MUSIC
-            card_mod:
-              style: |
-                ha-card {
-                  background: rgba(255, 255, 255, 0.05);
-                  backdrop-filter: blur(4px);
-                  -webkit-backdrop-filter: blur(4px);
-                  border-radius: 10px;
-                  border: none;
-                }
-        view_layout:
-          grid-area: bottombar
-      - type: vertical-stack
-        cards:
-          - type: custom:bubble-card
-            card_type: pop-up
-            hash: '#shopping'
-            button_type: name
-            name: Shopping Cart
-            icon: mdi:cart-heart
-            sub_button: []
-            show_header: true
-            auto_close: '150000'
-            margin: 7px
-            close_on_click: false
-            card_layout: normal
-          - display_order: none
-            type: todo-list
-            entity: todo.shopping_list
-            theme: Tablet
-            hide_completed: true
-            hide_create: false
-      - type: vertical-stack
-        cards:
-          - type: custom:bubble-card
-            card_type: pop-up
-            hash: '#light'
-            button_type: name
-            name: Lights
-            icon: mdi:lightbulb-group
-            sub_button: []
-            show_header: true
-            auto_close: '150000'
-            margin: 7px
-            close_on_click: false
-            card_layout: normal
-          - type: vertical-stack
-            view_layout:
-              grid-area: lights
+              style: >
+                ha-card { background: transparent !important; border: none
+                !important; box-shadow: none !important; } .subtitle {
+                font-size: 13px !important; color: #ffffff !important; opacity:
+                1 !important; font-weight: 700 !important; letter-spacing: 1px
+                !important; text-transform: uppercase !important; }
+          - type: grid
+            columns: 2
+            square: false
             cards:
-              - type: horizontal-stack
-                cards:
-                  - type: custom:mushroom-light-card
-                    entity: light.kitchen_lights
-                    name: Kitchen
-                    icon: phu:bulb-group-classic-hung-3-alt
-                    layout: vertical
-                    show_brightness_control: false
-                    show_color_control: false
-                    fill_container: false
-                    tap_action:
-                      action: toggle
-                  - type: custom:mushroom-light-card
-                    entity: light.living_room_lights
-                    name: Livingroom
-                    icon: phu:youtube-tv
-                    layout: vertical
-                    show_brightness_control: false
-                    show_color_control: false
-                    tap_action:
-                      action: toggle
-                  - type: custom:mushroom-light-card
-                    entity: light.bedroom_lights
-                    name: Bedroom
-                    icon: phu:rooms-bedroom
-                    layout: vertical
-                    show_brightness_control: false
-                    show_color_control: false
-                    tap_action:
-                      action: toggle
-                  - type: custom:mushroom-light-card
-                    entity: light.bathroom_lights
-                    name: Bathroom
-                    icon: phu:rooms-bathroom
-                    layout: vertical
-                    show_brightness_control: false
-                    show_color_control: false
-                    tap_action:
-                      action: toggle
-              - type: horizontal-stack
-                cards:
-                  - type: custom:mushroom-light-card
-                    entity: light.office_lights
-                    name: Office
-                    icon: phu:rooms-office
-                    layout: vertical
-                    show_brightness_control: false
-                    show_color_control: false
-                    tap_action:
-                      action: toggle
-                  - type: custom:mushroom-light-card
-                    entity: light.sengled_porch_light
-                    name: Porch
-                    icon: phu:rooms-porch
-                    layout: vertical
-                    show_brightness_control: false
-                    show_color_control: false
-                    tap_action:
-                      action: toggle
-                  - type: custom:mushroom-light-card
-                    entity: light.living_room_light_strip
-                    name: Strip
-                    icon: phu:light-strip
-                    layout: vertical
-                    show_brightness_control: false
-                    show_color_control: false
-                    tap_action:
-                      action: toggle
-                  - type: custom:mushroom-entity-card
-                    entity: switch.bedroom_lights_smart_plug
-                    name: Christmas
-                    icon: phu:christmas-tree
-                    layout: vertical
-                    tap_action:
-                      action: toggle
-      - type: vertical-stack
+              - type: custom:mushroom-template-card
+                primary: Trash Day
+                secondary: '{{ states(''sensor.trash'') }}'
+                icon: >-
+                  {% set s = states('sensor.trash') %}{% if s == 'Trash'
+                  %}mdi:trash-can{% elif s == 'Closing Soon' %}mdi:clock-alert{%
+                  else %}mdi:trash-can-outline{% endif %}
+                icon_color: >-
+                  {% set s = states('sensor.trash') %}{% if s == 'Trash'
+                  %}green{% elif s == 'Closing Soon' %}orange{% else %}grey{%
+                  endif %}
+                entity: sensor.trash
+                layout: horizontal
+                tap_action:
+                  action: more-info
+                card_mod:
+                  style: |
+                    ha-card { border-radius: 14px; box-shadow: none; }
+              - type: custom:mushroom-template-card
+                primary: Last Taken
+                secondary: '{{ states(''sensor.days_since_trash_taken'') }}'
+                icon: mdi:calendar-clock
+                icon_color: accent
+                entity: input_datetime.trash_taken_date
+                layout: horizontal
+                tap_action:
+                  action: more-info
+                card_mod:
+                  style: |
+                    ha-card { border-radius: 14px; box-shadow: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#cleaning'
+        name: Cleaning
+        icon: mdi:robot-vacuum
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
         cards:
-          - type: custom:bubble-card
-            card_type: pop-up
-            hash: '#cleaning'
-            button_type: name
-            name: Cleaning
-            icon: mdi:robot-vacuum
-            sub_button: []
-            show_header: true
-            auto_close: '150000'
-            margin: 7px
-            close_on_click: false
-            card_layout: normal
-          - type: vertical-stack
-            cards:
-              - show_state: false
-                show_name: true
-                camera_view: auto
-                fit_mode: cover
-                type: picture-entity
-                entity: image.ned_map_0
-                image: /api/camera_proxy/image.ned_map_0
-                name: Ned's Map
-              - type: horizontal-stack
-                cards:
-                  - show_name: true
-                    show_icon: true
-                    type: button
-                    name: Hallway
-                    icon: mdi:file-cabinet
-                    tap_action:
-                      action: call-service
-                      service: script.robot_vacuum_room_clean
-                      data:
-                        room_id: 16
-                    theme: Tablet
-                  - show_name: true
-                    show_icon: true
-                    type: button
-                    name: Kitchen
-                    icon: mdi:silverware-fork-knife
-                    tap_action:
-                      action: call-service
-                      service: script.robot_vacuum_room_clean
-                      data:
-                        room_id: 17
-                    theme: Tablet
-                  - show_name: true
-                    show_icon: true
-                    type: button
-                    name: Living
-                    icon: mdi:sofa
-                    tap_action:
-                      action: call-service
-                      service: script.robot_vacuum_room_clean
-                      data:
-                        room_id: 18
-                    theme: Tablet
-                  - show_name: true
-                    show_icon: true
-                    type: button
-                    name: Bedroom
-                    icon: mdi:bed-queen
-                    tap_action:
-                      action: call-service
-                      service: script.robot_vacuum_room_clean
-                      data:
-                        room_id: 19
-                    theme: Tablet
-              - type: horizontal-stack
-                cards:
-                  - show_name: true
-                    show_icon: true
-                    type: button
-                    name: Office
-                    icon: mdi:microsoft-visual-studio-code
-                    tap_action:
-                      action: call-service
-                      service: script.robot_vacuum_room_clean
-                      data:
-                        room_id: 20
-                    theme: Tablet
-                    show_state: false
-                  - show_name: true
-                    show_icon: true
-                    type: button
-                    name: Bathroom
-                    icon: mdi:shower
-                    tap_action:
-                      action: call-service
-                      service: script.robot_vacuum_room_clean
-                      data:
-                        room_id: 21
-                    theme: Tablet
-                  - show_name: true
-                    show_icon: true
-                    type: button
-                    name: Full Clean
-                    icon: mdi:robot-vacuum
-                    tap_action:
-                      action: call-service
-                      service: button.press
-                      target:
-                        entity_id: button.ned_full_cleaning
-                    theme: Tablet
-                  - type: button
-                    name: Light
-                    icon: mdi:lightbulb-on-30
-                    show_name: true
-                    show_icon: true
-                    tap_action:
-                      action: call-service
-                      service: homeassistant.toggle
-                      target:
-                        entity_id: input_boolean.general_cleaning
-                    theme: Tablet
-              - type: horizontal-stack
-                cards:
-                  - type: custom:mushroom-template-card
-                    primary: Clean
-                    icon: mdi:play-circle
-                    icon_color: green
-                    tap_action:
-                      action: call-service
-                      service: vacuum.start
-                      target:
-                        entity_id: vacuum.ned
-                  - type: custom:mushroom-template-card
-                    primary: Pause
-                    icon: mdi:pause-circle
-                    icon_color: amber
-                    tap_action:
-                      action: call-service
-                      service: vacuum.pause
-                      target:
-                        entity_id: vacuum.ned
-                  - type: custom:mushroom-template-card
-                    primary: Dock
-                    icon: mdi:home-map-marker
-                    icon_color: red
-                    tap_action:
-                      action: call-service
-                      service: vacuum.return_to_base
-                      target:
-                        entity_id: vacuum.ned
-                  - type: custom:mushroom-template-card
-                    primary: Locate
-                    icon: mdi:crosshairs-gps
-                    icon_color: indigo
-                    tap_action:
-                      action: call-service
-                      service: vacuum.locate
-                      target:
-                        entity_id: vacuum.ned
-              - type: grid
-                columns: 3
-                square: false
-                cards:
-                  - type: custom:mushroom-template-card
-                    primary: Battery
-                    secondary: '{{ states(''sensor.ned_battery'') }}%'
-                    icon: mdi:battery
-                    icon_color: blue
-                  - type: custom:mushroom-template-card
-                    primary: Status
-                    secondary: >-
-                      {% if is_state('binary_sensor.ned_cleaning', 'on')
-                      %}Cleaning {% elif is_state('binary_sensor.ned_charging',
-                      'on') %}Charging {% else %}Idle{% endif %}
-                    icon: mdi:robot-vacuum
-                    icon_color: >-
-                      {% if is_state('binary_sensor.ned_cleaning', 'on') %}blue
-                      {% elif is_state('binary_sensor.ned_charging', 'on')
-                      %}green {% else %}grey{% endif %}
-                  - type: custom:mushroom-template-card
-                    primary: Room
-                    secondary: '{{ states(''sensor.ned_current_room'') }}'
-                    icon: mdi:door
-                    icon_color: purple
-              - square: false
-                type: grid
-                cards:
-                  - type: custom:mushroom-template-card
-                    primary: Filter
-                    secondary: >-
-                      {{ (states('sensor.ned_filter_time_left')|int / 3600) |
-                      round(1) }} hrs
-                    icon: mdi:air-filter
-                    icon_color: blue
-                  - type: custom:mushroom-template-card
-                    primary: Main Brush
-                    secondary: >-
-                      {{ (states('sensor.ned_main_brush_time_left')|int / 3600)
-                      | round(1) }} hrs
-                    icon: mdi:brush
-                    icon_color: orange
-                  - type: custom:mushroom-template-card
-                    primary: Side Brush
-                    secondary: >-
-                      {{ (states('sensor.ned_side_brush_time_left')|int / 3600)
-                      | round(1) }} hrs
-                    icon: mdi:brush-variant
-                    icon_color: teal
-                    multiline_secondary: false
-                columns: 3
-              - type: grid
-                columns: 3
-                square: false
-                cards:
-                  - type: custom:mushroom-template-card
-                    primary: Cleans
-                    secondary: '{{ states(''sensor.ned_total_cleaning_count'') }}'
-                    icon: mdi:history
-                    icon_color: amber
-                  - type: custom:mushroom-template-card
-                    primary: Time
-                    secondary: '{{ states(''sensor.ned_cleaning_time'') }} min'
-                    icon: mdi:clock-outline
-                    icon_color: blue
-                  - type: custom:mushroom-template-card
-                    primary: Area
-                    secondary: '{{ states(''sensor.ned_cleaning_area'') }} m²'
-                    icon: mdi:map
-                    icon_color: green
-      - type: vertical-stack
-        cards:
-          - type: custom:bubble-card
-            card_type: pop-up
-            hash: '#music'
-            button_type: name
-            name: Music
-            icon: mdi:music-circle-outline
-            sub_button: []
-            show_header: true
-            auto_close: '150000'
-            margin: 7px
-            close_on_click: false
-            card_layout: normal
-          - type: custom:mushroom-template-card
-            primary: Cooking Tunes
-            icon: mdi:music
-            entity: input_boolean.cooking_time
-            layout: vertical
-            tap_action:
-              action: toggle
-            double_tap_action:
-              action: more-info
-            icon_color: |
-              {% if is_state('input_boolean.cooking_time', 'on') %}
-                green
-              {% else %}
-                disabled
-              {% endif %}
+          - type: custom:vacuum-card
+            entity: vacuum.mowgli
+            compact_view: false
+            show_name: true
+            show_toolbar: true
             card_mod:
               style: |
-                mushroom-shape-icon {
-                  --icon-size: 64px;
-                }
-                ha-card {
-                  background: none;
-                  box-shadow: none;
-                  border: none;
-                }
-          - square: true
-            type: grid
-            cards:
-              - type: custom:mini-media-player
-                entity: media_player.kitchen_speaker
-                artwork: full-cover
-                volume_stateless: false
-                sound_mode: full
-                group: false
-                source: icon
-                replace_mute: next
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#guestwifi'
+        name: Guest Wi-Fi
+        icon: mdi:wifi
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: custom:mushroom-title-card
+            alignment: center
+            subtitle: Turn on guest mode first
+            visibility:
+              - condition: state
+                entity: input_boolean.guest_mode
+                state: 'off'
+            card_mod:
+              style: >
+                ha-card { background: transparent !important; border: none
+                !important; box-shadow: none !important; padding: 4px 4px 0
+                !important; } .subtitle { font-size: 13px !important; opacity:
+                0.6 !important; letter-spacing: 1px !important; text-transform:
+                uppercase !important; }
+          - type: picture
+            image:
+              media_content_id: media-source://image_upload/d3dcfba8e146688736bb2998b6db55c9
+              media_content_type: image/png
+              metadata:
+                title: Guest-QR.png
+                thumbnail: /api/image/serve/d3dcfba8e146688736bb2998b6db55c9/256x256
+                media_class: image
+                navigateIds:
+                  - {}
+                  - media_content_type: app
+                    media_content_id: media-source://image_upload
+            visibility:
+              - condition: and
+                conditions:
+                  - condition: state
+                    entity: input_boolean.guest_mode
+                    state: 'on'
+                  - condition: or
+                    conditions:
+                      - condition: state
+                        entity: person.richard
+                        state: home
+                      - condition: state
+                        entity: person.wife
+                        state: home
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+          - type: grid
             columns: 1
-      - type: vertical-stack
+            square: false
+            cards:
+              - type: button
+                name: Guest Mode
+                icon: mdi:account-multiple
+                entity: input_boolean.guest_mode
+                show_name: true
+                show_icon: true
+                icon_height: 24px
+                tap_action:
+                  action: toggle
+                hold_action:
+                  action: more-info
+                card_mod:
+                  style: >
+                    {% set active = is_state('input_boolean.guest_mode','on') %}
+                    ha-card { border-radius: 14px; border: none; box-shadow:
+                    none; padding: 10px 2px !important; font-size: 12px;
+                    --paper-item-icon-color: {{ '#AB47BC' if active else
+                    'var(--secondary-text-color)' }}; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#alarm'
+        name: Alarm
+        icon: mdi:shield-home
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
         cards:
-          - type: custom:bubble-card
-            card_type: pop-up
-            hash: '#timer'
-            button_type: name
-            name: Timers
-            icon: mdi:timer-alert-outline
-            sub_button: []
-            show_header: true
-            auto_close: '150000'
-            margin: 7px
-            close_on_click: false
-            card_layout: normal
-          - type: custom:mushroom-template-card
-            primary: >
-              {% set t = states.timer.custom_countdown %} {% if t.state ==
-              'active' %}
-                {{ t.attributes.remaining }}
-              {% else %}
-                No timer running
-              {% endif %}
-            icon: mdi:timer-outline
-            icon_color: green
-            layout: vertical
+          - type: custom:alarmo-card
+            entity: alarm_control_panel.alarmo
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#front-door'
+        name: Front Door
+        icon: mdi:door
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: picture-entity
+            entity: camera.front_door_bell_clear
+            camera_view: auto
+            show_state: false
+            show_name: false
             tap_action:
               action: more-info
-            entity: timer.custom_countdown
+            card_mod:
+              style: |
+                ha-card { border-radius: 14px; box-shadow: none; }
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-template-card
+                entity: binary_sensor.front_door_cs_contact
+                primary: >-
+                  {{ 'Door Open' if
+                  is_state('binary_sensor.front_door_cs_contact','on') else
+                  'Door Closed' }}
+                secondary: >-
+                  {{
+                  relative_time(states.binary_sensor.front_door_cs_contact.last_changed)
+                  }} ago
+                icon: >-
+                  {{ 'mdi:door-open' if
+                  is_state('binary_sensor.front_door_cs_contact','on') else
+                  'mdi:door-closed' }}
+                icon_color: >-
+                  {{ 'red' if
+                  is_state('binary_sensor.front_door_cs_contact','on') else
+                  'green' }}
+                layout: vertical
+                tap_action:
+                  action: more-info
+                card_mod:
+                  style: >
+                    ha-card { border-radius: 14px; box-shadow: none; padding:
+                    12px 4px !important; }
+              - type: custom:mushroom-template-card
+                entity: lock.front_lock
+                primary: >-
+                  {% set s = states('lock.front_lock') %}{{ 'Locked' if s ==
+                  'locked' else 'Unlocked' if s == 'unlocked' else s | title }}
+                secondary: '{{ relative_time(states.lock.front_lock.last_changed) }} ago'
+                icon: >-
+                  {% set s = states('lock.front_lock') %}{% if s == 'locked'
+                  %}mdi:lock{% elif s == 'unlocked' %}mdi:lock-open-variant{%
+                  elif s in ['locking','unlocking'] %}mdi:lock-clock{% else
+                  %}mdi:lock-alert{% endif %}
+                icon_color: >-
+                  {% set s = states('lock.front_lock') %}{% if s == 'locked'
+                  %}green{% elif s == 'unlocked' %}orange{% elif s in
+                  ['locking','unlocking'] %}blue{% else %}red{% endif %}
+                layout: vertical
+                tap_action:
+                  action: more-info
+                card_mod:
+                  style: >
+                    ha-card { border-radius: 14px; box-shadow: none; padding:
+                    12px 4px !important; }
+          - type: custom:mushroom-lock-card
+            entity: lock.front_lock
+            name: Front Lock
+            layout: horizontal
+            fill_container: true
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#back-door'
+        name: Back Door
+        icon: mdi:door
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: picture-entity
+            entity: camera.back_yard_clear
+            camera_view: auto
+            show_state: false
+            show_name: false
+            tap_action:
+              action: more-info
+            card_mod:
+              style: |
+                ha-card { border-radius: 14px; box-shadow: none; }
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-template-card
+                entity: binary_sensor.back_door_cs_contact
+                primary: >-
+                  {{ 'Door Open' if
+                  is_state('binary_sensor.back_door_cs_contact','on') else 'Door
+                  Closed' }}
+                secondary: >-
+                  {{
+                  relative_time(states.binary_sensor.back_door_cs_contact.last_changed)
+                  }} ago
+                icon: >-
+                  {{ 'mdi:door-open' if
+                  is_state('binary_sensor.back_door_cs_contact','on') else
+                  'mdi:door-closed' }}
+                icon_color: >-
+                  {{ 'red' if
+                  is_state('binary_sensor.back_door_cs_contact','on') else
+                  'green' }}
+                layout: vertical
+                tap_action:
+                  action: more-info
+                card_mod:
+                  style: >
+                    ha-card { border-radius: 14px; box-shadow: none; padding:
+                    12px 4px !important; }
+              - type: custom:mushroom-template-card
+                entity: lock.back_door
+                primary: >-
+                  {% set s = states('lock.back_door') %}{{ 'Locked' if s ==
+                  'locked' else 'Unlocked' if s == 'unlocked' else s | title }}
+                secondary: '{{ relative_time(states.lock.back_door.last_changed) }} ago'
+                icon: >-
+                  {% set s = states('lock.back_door') %}{% if s == 'locked'
+                  %}mdi:lock{% elif s == 'unlocked' %}mdi:lock-open-variant{%
+                  elif s in ['locking','unlocking'] %}mdi:lock-clock{% else
+                  %}mdi:lock-alert{% endif %}
+                icon_color: >-
+                  {% set s = states('lock.back_door') %}{% if s == 'locked'
+                  %}green{% elif s == 'unlocked' %}orange{% elif s in
+                  ['locking','unlocking'] %}blue{% else %}red{% endif %}
+                layout: vertical
+                tap_action:
+                  action: more-info
+                card_mod:
+                  style: >
+                    ha-card { border-radius: 14px; box-shadow: none; padding:
+                    12px 4px !important; }
+          - type: custom:mushroom-lock-card
+            entity: lock.back_door
+            name: Back Lock
+            layout: horizontal
+            fill_container: true
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#pony'
+        name: Pony
+        icon: mdi:car-electric
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-template-card
+                entity: sensor.carvin_elvehplug
+                primary: >-
+                  {% if
+                  is_state('binary_sensor.richards_mach_e_mach_e_home_charging','on')
+                  %}Charging{% elif
+                  is_state('sensor.carvin_elvehplug','CONNECTED')
+                  %}Plugged In{% else %}Unplugged{% endif %}
+                secondary: >-
+                  {% if
+                  is_state('binary_sensor.richards_mach_e_mach_e_home_charging','on')
+                  %}{{
+                  states('sensor.carvin_elvehchargingpower')
+                  | float(0) | round(1) }} kW{% elif
+                  is_state('sensor.carvin_elvehplug','CONNECTED')
+                  %}Not charging{% else %}Not connected{% endif %}
+                icon: >-
+                  {{ 'mdi:ev-station' if
+                  is_state('sensor.carvin_elvehplug','CONNECTED')
+                  else 'mdi:power-plug-off-outline' }}
+                icon_color: >-
+                  {% if
+                  is_state('binary_sensor.richards_mach_e_mach_e_home_charging','on')
+                  %}green{% elif
+                  is_state('sensor.carvin_elvehplug','CONNECTED')
+                  %}blue{% else %}grey{% endif %}
+                layout: horizontal
+                fill_container: true
+                tap_action:
+                  action: more-info
+                card_mod:
+                  style: |
+                    ha-card { border-radius: 14px; box-shadow: none;
+                      --card-primary-font-size: 14px; --card-secondary-font-size: 12px; }
+              - type: custom:mushroom-template-card
+                entity: sensor.carvin_windowposition
+                primary: Windows
+                secondary: >-
+                  {% set w =
+                  states('sensor.carvin_windowposition') |
+                  lower %}{{ 'Closed' if 'close' in w else 'Open' if 'open' in w
+                  else w | title }}
+                icon: >-
+                  {% set w =
+                  states('sensor.carvin_windowposition') |
+                  lower %}{{ 'mdi:window-closed-variant' if 'close' in w else
+                  'mdi:window-open-variant' }}
+                icon_color: >-
+                  {% set w =
+                  states('sensor.carvin_windowposition') |
+                  lower %}{{ 'green' if 'close' in w else 'red' if 'open' in w
+                  else 'grey' }}
+                layout: horizontal
+                fill_container: true
+                tap_action:
+                  action: more-info
+                card_mod:
+                  style: |
+                    ha-card { border-radius: 14px; box-shadow: none;
+                      --card-primary-font-size: 14px; --card-secondary-font-size: 12px; }
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-template-card
+                entity: sensor.carvin_elveh
+                primary: >-
+                  {{ states('sensor.carvin_elveh') |
+                  float(0) | round(0) | int }} mi
+                secondary: Range
+                icon: mdi:map-marker-distance
+                icon_color: >-
+                  {% set r = states('sensor.carvin_elveh') |
+                  float(0) | round(0) | int %}{% if r >= 100 %}teal{% elif r >=
+                  40 %}amber{% else %}red{% endif %}
+                layout: vertical
+                tap_action:
+                  action: more-info
+                card_mod:
+                  style: >
+                    ha-card { border-radius: 14px; box-shadow: none; padding:
+                    12px 4px !important;
+                      --card-primary-font-size: 16px; --card-secondary-font-size: 11px;
+                      --icon-size: 38px; text-align: center; }
+              - type: custom:mushroom-template-card
+                entity: sensor.carvin_soc
+                primary: >-
+                  {{ states('sensor.carvin_soc') | int(0)
+                  }}%
+                secondary: Battery
+                icon: >-
+                  {% set b = states('sensor.carvin_soc') |
+                  int(0) %}{% if
+                  is_state('binary_sensor.richards_mach_e_mach_e_home_charging','on')
+                  %}mdi:battery-charging{% elif b >= 90 %}mdi:battery{% elif b
+                  >= 60 %}mdi:battery-70{% elif b >= 40 %}mdi:battery-50{% elif
+                  b >= 20 %}mdi:battery-30{% else %}mdi:battery-alert{% endif %}
+                icon_color: >-
+                  {% set b = states('sensor.carvin_soc') |
+                  int(0) %}{{ 'green' if b >= 60 else 'amber' if b >= 30 else
+                  'red' }}
+                layout: vertical
+                tap_action:
+                  action: more-info
+                card_mod:
+                  style: >
+                    ha-card { border-radius: 14px; box-shadow: none; padding:
+                    12px 4px !important;
+                      --card-primary-font-size: 16px; --card-secondary-font-size: 11px;
+                      --icon-size: 38px; text-align: center; }
+              - type: custom:mushroom-template-card
+                entity: sensor.carvin_battery
+                primary: >-
+                  {{ states('sensor.carvin_battery') |
+                  float(0) | round(0) | int }}%
+                secondary: 12V Battery
+                icon: mdi:car-battery
+                icon_color: >-
+                  {% set v = states('sensor.carvin_battery')
+                  | float(0) | round(0) | int %}{{ 'green' if v >= 70 else
+                  'amber' if v >= 50 else 'red' }}
+                layout: vertical
+                tap_action:
+                  action: more-info
+                card_mod:
+                  style: >
+                    ha-card { border-radius: 14px; box-shadow: none; padding:
+                    12px 4px !important;
+                      --card-primary-font-size: 16px; --card-secondary-font-size: 11px;
+                      --icon-size: 38px; text-align: center; }
+              - type: custom:mushroom-template-card
+                entity: sensor.carvin_odometer
+                primary: >-
+                  {{
+                  '{:,}'.format(states('sensor.carvin_odometer')
+                  | float(0) | round(0) | int) }} mi
+                secondary: Odometer
+                icon: mdi:counter
+                icon_color: grey
+                layout: vertical
+                tap_action:
+                  action: more-info
+                card_mod:
+                  style: >
+                    ha-card { border-radius: 14px; box-shadow: none; padding:
+                    12px 4px !important;
+                      --card-primary-font-size: 16px; --card-secondary-font-size: 11px;
+                      --icon-size: 38px; text-align: center; }
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#water'
+        name: Water Usage
+        icon: mdi:water
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: custom:mini-graph-card
+            name: Last 30 Days
+            icon: mdi:water
+            entities:
+              - entity: sensor.daily_water_usage
+                name: Daily Usage
+                color: '#2196F3'
+            hours_to_show: 720
+            group_by: date
+            aggregate_func: max
+            line_width: 2
+            height: 180
+            decimals: 0
+            unit: gal
+            show:
+              graph: line
+              fill: fade
+              points: false
+              average: true
+              extrema: true
+              legend: false
+              icon: true
+              name: true
+              state: true
             card_mod:
               style: |
                 ha-card {
                   background: none;
                   box-shadow: none;
+                  border: none;
                 }
-          - type: vertical-stack
+        auto_close: '300000'
+      - type: custom:bubble-card
+        card_type: pop-up
+        popup_mode: centered
+        hash: '#safety'
+        name: Leak & Smoke
+        icon: mdi:shield-home
+        button_type: name
+        full_width_on_mobile: false
+        sub_button:
+          main: []
+          bottom: []
+        cards:
+          - type: heading
+            heading: Water Leak
+            heading_style: subtitle
+            card_mod:
+              style: >
+                ha-card { background: transparent !important; border: none
+                !important; box-shadow: none !important; } .subtitle {
+                font-size: 13px !important; color: #ffffff !important; opacity:
+                1 !important; font-weight: 700 !important; letter-spacing: 1px
+                !important; text-transform: uppercase !important; }
+          - type: grid
+            columns: 2
+            square: false
             cards:
-              - type: horizontal-stack
-                cards:
-                  - type: custom:mushroom-template-card
-                    primary: 5 Min
-                    icon: mdi:timer-sand
-                    icon_color: green
-                    tap_action:
-                      action: call-service
-                      service: script.start_custom_timer
-                      data:
-                        duration: 300
-                    layout: vertical
-                  - type: custom:mushroom-template-card
-                    primary: 10 Min
-                    icon: mdi:timer-sand
-                    icon_color: green
-                    tap_action:
-                      action: call-service
-                      service: script.start_custom_timer
-                      data:
-                        duration: 600
-                    layout: vertical
-                  - type: custom:mushroom-template-card
-                    primary: 15 Min
-                    icon: mdi:timer-sand
-                    icon_color: green
-                    tap_action:
-                      action: call-service
-                      service: script.start_custom_timer
-                      data:
-                        duration: 900
-                    layout: vertical
-              - type: horizontal-stack
-                cards:
-                  - type: custom:mushroom-template-card
-                    primary: 20 Min
-                    icon: mdi:timer-sand
-                    icon_color: green
-                    tap_action:
-                      action: call-service
-                      service: script.start_custom_timer
-                      data:
-                        duration: 1200
-                    layout: vertical
-                  - type: custom:mushroom-template-card
-                    primary: 30 Min
-                    icon: mdi:timer-sand
-                    icon_color: green
-                    tap_action:
-                      action: call-service
-                      service: script.start_custom_timer
-                      data:
-                        duration: 1800
-                    layout: vertical
-                  - type: custom:mushroom-template-card
-                    primary: 45 Min
-                    icon: mdi:timer-sand
-                    icon_color: green
-                    tap_action:
-                      action: call-service
-                      service: script.start_custom_timer
-                      data:
-                        duration: 2700
-                    layout: vertical
-              - type: horizontal-stack
-                cards:
-                  - type: custom:mushroom-template-card
-                    primary: 1 Hour
-                    icon: mdi:timer-sand
-                    icon_color: green
-                    tap_action:
-                      action: call-service
-                      service: script.start_custom_timer
-                      data:
-                        duration: 3600
-                    layout: vertical
-                  - type: custom:mushroom-template-card
-                    primary: Cancel
-                    icon: mdi:timer-off
-                    icon_color: red
-                    tap_action:
-                      action: call-service
-                      service: timer.cancel
-                      data:
-                        entity_id: timer.custom_countdown
-                    layout: vertical
+              - type: tile
+                entity: binary_sensor.basement_water_leak_water_leak
+                name: Basement
+                card_mod:
+                  style: |
+                    ha-card { border-radius: 14px; box-shadow: none; }
+              - type: tile
+                entity: binary_sensor.kitchen_sink_water_leak_water_leak
+                name: Kitchen Sink
+                card_mod:
+                  style: |
+                    ha-card { border-radius: 14px; box-shadow: none; }
+              - type: tile
+                entity: binary_sensor.klippbok_water_leak_sensor_water_leak_2
+                name: Kitchen Fridge
+                card_mod:
+                  style: |
+                    ha-card { border-radius: 14px; box-shadow: none; }
+              - type: tile
+                entity: binary_sensor.main_bathroom_sink_water_leak_water_leak
+                name: Bathroom Sink
+                card_mod:
+                  style: |
+                    ha-card { border-radius: 14px; box-shadow: none; }
+              - type: tile
+                entity: binary_sensor.klippbok_water_leak_sensor_water_leak_3
+                name: Bathroom Toilet
+                card_mod:
+                  style: |
+                    ha-card { border-radius: 14px; box-shadow: none; }
+              - type: tile
+                entity: binary_sensor.top_floor_bathroom_sink_water_leak_water_leak
+                name: 2nd Bath Sink
+                card_mod:
+                  style: |
+                    ha-card { border-radius: 14px; box-shadow: none; }
+              - type: tile
+                entity: binary_sensor.klippbok_water_leak_sensor_water_leak
+                name: Washing Machine
+                card_mod:
+                  style: |
+                    ha-card { border-radius: 14px; box-shadow: none; }
+          - type: heading
+            heading: Smoke & CO
+            heading_style: subtitle
+            card_mod:
+              style: >
+                ha-card { background: transparent !important; border: none
+                !important; box-shadow: none !important; } .subtitle {
+                font-size: 13px !important; color: #ffffff !important; opacity:
+                1 !important; font-weight: 700 !important; letter-spacing: 1px
+                !important; text-transform: uppercase !important; }
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: tile
+                entity: binary_sensor.basement_floor_smoke
+                name: Basement Smoke
+                card_mod:
+                  style: |
+                    ha-card { border-radius: 14px; box-shadow: none; }
+              - type: tile
+                entity: sensor.basement_floor_carbon_monoxide
+                name: Basement CO
+                card_mod:
+                  style: |
+                    ha-card { border-radius: 14px; box-shadow: none; }
+              - type: tile
+                entity: binary_sensor.kitchen_alarm_smoke
+                name: Kitchen Smoke
+                card_mod:
+                  style: |
+                    ha-card { border-radius: 14px; box-shadow: none; }
+              - type: tile
+                entity: sensor.kitchen_alarm_carbon_monoxide
+                name: Kitchen CO
+                card_mod:
+                  style: |
+                    ha-card { border-radius: 14px; box-shadow: none; }
+              - type: tile
+                entity: binary_sensor.top_floor_hallway_smoke
+                name: Top Floor Smoke
+                card_mod:
+                  style: |
+                    ha-card { border-radius: 14px; box-shadow: none; }
+              - type: tile
+                entity: sensor.top_floor_hallway_carbon_monoxide
+                name: Top Floor CO
+                card_mod:
+                  style: |
+                    ha-card { border-radius: 14px; box-shadow: none; }
+        auto_close: '300000'
+    theme: Richard
     background:
-      opacity: 80
+      opacity: 10
       alignment: center
       size: cover
       repeat: no-repeat
       attachment: fixed
-      image: /api/image/serve/ce8579082d057339159bdaaa2ea54f50/original
+      image:
+        media_content_id: media-source://image_upload/749ac6db829d8de43dd8e08d86db48a7
+        media_content_type: image/jpeg
+        metadata:
+          title: edgar-chaparro-Lwx-q6OdGAc-unsplash.jpg
+          thumbnail: /api/image/serve/749ac6db829d8de43dd8e08d86db48a7/256x256
+          media_class: image
+          navigateIds:
+            - {}
+            - media_content_type: app
+              media_content_id: media-source://image_upload
