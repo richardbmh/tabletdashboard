@@ -64,7 +64,15 @@ The top right chips are how I control the most used stuff in the house but they 
 
 ---
 
-## 📷 Bottom Right: Under the Cameras
+## 📷 Cameras and Bottom Right
+
+**Camera Detections**
+
+![Camera Detections](assets/cameradetections.png)
+
+The Cameras title has a chip next to it that shows **No Person** or tells you exactly where someone was detected, like Person @ Front Door & Back Yard. I like knowing right away if someone is outside without having to open every camera to find out where they are.
+
+**Under the Cameras**
 
 ![Bottom Right](assets/bottomright.png)
 
@@ -73,8 +81,6 @@ Same idea as the top right, the chips under the cameras also work as notificatio
 - ⚡ **Charging** only shows up when the car is charging and shows how many kW it's pulling
 - 💧 **Flowing** only shows up when water is running and shows the flow rate
 - 🚰 **Water Today** always shows how many gallons we used today, turns blue when water is flowing. Tap it to open the water usage popup
-
-The Cameras title also has a chip next to it that shows **No Person** or tells you exactly where someone was detected, like Person @ Front Door & Back Yard.
 
 ---
 
@@ -96,6 +102,26 @@ All popups are made with Bubble Card and open in the center of the screen. Here 
 - **Pony** (my car) with charging status, windows, range, battery, 12V battery and odometer
 - **Water Usage** with a graph of the last 30 days
 - **Leak and Smoke** with every water leak sensor and every smoke and CO sensor in the house
+
+Here are a few of them:
+
+**Climate**
+
+![Climate](assets/climate.png)
+
+I like being able to change the temperature, the mode and the fan for upstairs and downstairs right from the tablet without having to open the thermostat app or walk to the thermostat.
+
+**Pony**
+
+![Pony](assets/pony.png)
+
+I like having a quick look at the car before I leave. I can see the range, the battery, if it's charging and if I left a window open all in one place.
+
+**Leak and Smoke**
+
+![Leak and Smoke](assets/leakandsmoke.png)
+
+I like being able to have an overview of all smoke detectors and water leak sensors in the house. One look and I know everything is good or exactly where the problem is.
 
 ---
 
@@ -120,7 +146,7 @@ Everything below can be installed from HACS. Make sure you have all of them or t
 - [Alarmo](https://github.com/nielsfaber/alarmo) for the alarm
 - [FordPass](https://github.com/marq24/ha-fordpass) for the car
 - [Music Assistant](https://music-assistant.io) for the speakers
-- Droplet for the water usage
+- Droplet for the water usage (Using MQTT)
 
 You don't need all the integrations, if you don't have something just remove that card or swap it for something you do have.
 
